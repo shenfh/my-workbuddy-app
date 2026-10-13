@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>望目智诊 · 拍眼分析</title>
+<style>
+:root{
+  --paper:#f6f1e6; --paper2:#efe7d5; --ink:#2b2620; --ink2:#6a5f50;
+  --cinnabar:#a83a2a; --cinnabar2:#8c2f22; --gold:#8a6d3b; --jade:#3d6b5e;
+  --card:#fffdf8; --line:#d8cdb6; --ok:#3d6b5e; --warn:#a86a1f; --danger:#a83a2a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--paper); color:var(--ink); line-height:1.6; font-size:15px;
+  background-image:radial-gradient(#e8dfca 1px, transparent 1px); background-size:22px 22px;
+}
+.wrap{max-width:760px;margin:0 auto;padding:16px 14px 90px}
+header{display:flex;align-items:center;gap:10px;padding:6px 2px 14px}
+.logo{
+  width:44px;height:44px;border-radius:50%;background:var(--cinnabar);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(140,47,34,.3);
+}
+header h1{font-size:20px;letter-spacing:1px}
+header .sub{font-size:12px;color:var(--ink2)}
+.tabs{display:flex;gap:8px;margin-bottom:14px;position:sticky;top:0;z-index:20;background:linear-gradient(var(--paper) 85%,transparent);padding:8px 0}
+.tab{
+  flex:1;text-align:center;padding:9px 4px;border-radius:10px;background:var(--card);
+  border:1px solid var(--line);font-size:14px;color:var(--ink2);cursor:pointer;user-select:none;
+}
+.tab.on{background:var(--cinnabar);color:#fff;border-color:var(--cinnabar);font-weight:600;box-shadow:0 2px 8px rgba(140,47,34,.25)}
+.page{display:none;animation:fade .25s}
+.page.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(60,45,20,.06)}
+.card h2{font-size:16px;margin-bottom:10px;color:var(--cinnabar2);display:flex;align-items:center;gap:6px}
+.card h2 .n{font-size:12px;color:#fff;background:var(--cinnabar);border-radius:6px;padding:1px 7px;font-weight:500}
+.card h3{font-size:14px;margin:12px 0 6px;color:var(--gold)}
+p.tips{font-size:13px;color:var(--ink2)}
+.btn{
+  display:block;width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;
+  background:var(--cinnabar);color:#fff;font-weight:600;cursor:pointer;margin-top:10px;letter-spacing:2px;
+}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:var(--card);color:var(--cinnabar2);border:1.5px solid var(--cinnabar)}
+.btn.jade{background:var(--jade)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btnrow{display:flex;gap:10px}.btnrow .btn{margin-top:10px}
+.intro-quote{border-left:3px solid var(--gold);padding:8px 12px;background:var(--paper2);border-radius:0 8px 8px 0;font-size:13px;color:var(--ink2);margin:8px 0}
+.src{font-size:12px;color:var(--ink2)}
+.big-actions{display:flex;gap:12px;margin-top:6px}
+.big-actions .btn{margin-top:0;padding:18px 8px;display:flex;flex-direction:column;gap:2px;align-items:center}
+.big-actions .btn .ic{font-size:26px}
+.big-actions .btn small{font-weight:400;font-size:11px;letter-spacing:0;opacity:.85}
+/* 相机 */
+#camPanel{display:none;position:fixed;inset:0;background:#000;z-index:100;flex-direction:column}
+#camPanel.on{display:flex}
+#video{flex:1;object-fit:cover;width:100%}
+.cam-tip{position:absolute;top:14px;left:0;right:0;text-align:center;color:#ffdf9e;font-size:13px;text-shadow:0 1px 3px #000;padding:0 30px;pointer-events:none}
+.oval{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(78vw,320px);height:min(78vw,320px);border:2px dashed rgba(255,255,255,.55);border-radius:50%;pointer-events:none}
+.cam-btns{display:flex;justify-content:space-around;align-items:center;padding:18px;background:#000}
+.cam-circle{width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid rgba(255,255,255,.35);cursor:pointer}
+.cam-close{color:#fff;font-size:14px;padding:8px 14px;border:1px solid #777;border-radius:20px;background:transparent}
+/* 图片标记 */
+#imgStage{position:relative;border-radius:12px;overflow:hidden;background:#111}
+#imgCanvas{width:100%;display:block}
+#imgStage.clickmode{cursor:crosshair}
+.stage-tip{font-size:13px;color:var(--ink2);margin:8px 2px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:8px 0}
+.seg div{flex:1;text-align:center;padding:9px 4px;background:var(--card);font-size:14px;cursor:pointer;color:var(--ink2)}
+.seg div.on{background:var(--cinnabar);color:#fff;font-weight:600}
+/* 结果 */
+#overlayWrap{position:relative;border-radius:12px;overflow:hidden;background:#111}
+#overlayCanvas{width:100%;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.legend span{font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:4px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.tagline{display:inline-block;font-size:12px;padding:2px 10px;border-radius:20px;margin:2px 4px 2px 0;background:var(--paper2);color:var(--ink2);border:1px solid var(--line)}
+.tagline.hot{background:#fdecea;color:var(--cinnabar2);border-color:#e8b6ad}
+.tagline.cold{background:#e8f0f5;color:#3a5a75;border-color:#b6cbd8}
+.badge{display:inline-block;font-size:12px;padding:2px 10px;border-radius:6px;margin-right:6px;color:#fff}
+.b-ok{background:var(--ok)}.b-warn{background:var(--warn)}.b-bad{background:var(--danger)}.b-info{background:var(--jade)}
+table.rpt{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
+table.rpt th,table.rpt td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+table.rpt th{background:var(--paper2);font-weight:600;color:var(--gold);white-space:nowrap}
+.colorchips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.chip{width:52px;height:52px;border-radius:8px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25);position:relative}
+.chip small{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink2);white-space:nowrap}
+.chipwrap{margin-bottom:24px}
+.meter{background:var(--paper2);border-radius:8px;height:14px;overflow:hidden;margin:4px 0 2px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),var(--warn),var(--danger))}
+.meter-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--ink2)}
+.disclaim{
+  border:1.5px dashed var(--danger);background:#fdf3f1;border-radius:12px;padding:12px;margin:14px 0;font-size:12.5px;color:#7a2c20;
+}
+.disclaim b{color:var(--danger)}
+.loading{text-align:center;padding:40px 0;display:none}
+.loading.on{display:block}
+.spinner{width:46px;height:46px;border:4px solid var(--line);border-top-color:var(--cinnabar);border-radius:50%;margin:0 auto 14px;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.step-dots{display:flex;justify-content:center;gap:8px;margin-top:8px}
+.step-dots i{width:8px;height:8px;border-radius:50%;background:var(--line);transition:.3s}
+.step-dots i.on{background:var(--cinnabar);width:22px;border-radius:4px}
+/* 知识库 */
+.kb h3{font-size:14px;color:var(--cinnabar2);margin:14px 0 6px}
+.kb .verse{background:var(--paper2);border-radius:10px;padding:10px 14px;font-size:14px;letter-spacing:1px;text-align:center;color:var(--ink);margin:8px 0;font-weight:600}
+.kb ul{padding-left:20px;font-size:13.5px}
+.kb li{margin:4px 0}
+footer{position:fixed;bottom:0;left:0;right:0;background:var(--paper2);border-top:1px solid var(--line);padding:8px 14px;text-align:center;font-size:11.5px;color:var(--ink2);z-index:30}
+footer b{color:var(--cinnabar2)}
+dialog{border:none;border-radius:14px;padding:18px;max-width:340px;width:90%;background:var(--card);box-shadow:0 10px 40px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(30,20,10,.55)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">目</div>
+    <div>
+      <h1>望目智诊</h1>
+      <div class="sub">拍眼分析 · 壮医目诊 × 望目辨证</div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab on" data-p="p-home">拍眼分析</div>
+    <div class="tab" data-p="p-kb">目诊知识库</div>
+    <div class="tab" data-p="p-about">理论与来源</div>
+  </div>
+
+  <!-- ============ 首页 ============ -->
+  <div class="page on" id="p-home">
+    <div class="card">
+      <h2><span class="n">壹</span>拍摄眼部照片</h2>
+      <p class="tips">将眼部置于取景框内，<b>光线充足、正视前方</b>（可微微下视以暴露白睛），不戴眼镜、避开红眼闪光。也可以从相册上传一张清晰的眼部特写。</p>
+      <div class="big-actions">
+        <button class="btn" onclick="openCam()"><span class="ic">📷</span>拍摄<small>调用摄像头</small></button>
+        <button class="btn ghost" onclick="document.getElementById('fileInput').click()"><span class="ic">🖼️</span>上传<small>从相册选择</small></button>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+    </div>
+
+    <div class="card" id="labelCard" style="display:none">
+      <h2><span class="n">贰</span>确认瞳孔位置</h2>
+      <div id="imgStage">
+        <canvas id="imgCanvas"></canvas>
+      </div>
+      <p class="stage-tip" id="stageTip">检测到瞳孔位置（绿色圈）。若不准确，请<b>直接点击图中瞳孔（黑睛）中心</b>进行修正。</p>
+      <div class="seg" id="eyeSeg">
+        <div data-v="right">右眼</div>
+        <div data-v="left" class="on">左眼</div>
+      </div>
+      <p class="tips">镜子自拍或前置摄像头拍摄的图片通常已左右镜像，请按<b>照片中所见</b>（即照镜子时）的左右选择。</p>
+      <div class="seg" id="mirrorSeg">
+        <div data-v="mirror" class="on">自拍/镜像</div>
+        <div data-v="normal">他人拍摄</div>
+      </div>
+      <button class="btn jade" onclick="runAnalysis()">🔍 开始分析</button>
+    </div>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div id="loadingTxt" style="font-size:14px;color:var(--ink2)">正在辨识白睛区域…</div>
+      <div class="step-dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+    </div>
+
+    <div id="resultWrap" style="display:none"></div>
+  </div>
+
+  <!-- ============ 知识库 ============ -->
+  <div class="page kb" id="p-kb">
+    <div class="card">
+      <h2><span class="n">诀</span>壮医目诊定性口诀</h2>
+      <div class="verse">着色深浅判新久<br>弯曲频率别轻重<br>脉络混浊有湿毒<br>脉络散乱为风毒<br>脉络近瞳属于火<br>脉络靠边属于寒<br>黑斑瘀来蓝斑虫<br>目诊仔细辨分明</div>
+      <h3>白睛血络颜色主病</h3>
+      <table class="rpt">
+        <tr><th>颜色</th><th>主病</th><th>色样</th></tr>
+        <tr><td>淡红</td><td>气虚</td><td><span style="color:#e89a8a">⬤</span></td></tr>
+        <tr><td>粉红</td><td>血虚 / 新病轻病</td><td><span style="color:#e2726b">⬤</span></td></tr>
+        <tr><td>鲜红</td><td>热证 / 新病不久</td><td><span style="color:#d43a2f">⬤</span></td></tr>
+        <tr><td>殷红</td><td>阴虚证</td><td><span style="color:#a52a25">⬤</span></td></tr>
+        <tr><td>绛红</td><td>热甚 / 宿疾</td><td><span style="color:#8c1a12">⬤</span></td></tr>
+        <tr><td>紫红</td><td>高热性血瘀实证</td><td><span style="color:#7a1030">⬤</span></td></tr>
+        <tr><td>青蓝</td><td>寒证 / 虫毒</td><td><span style="color:#3a5a8c">⬤</span></td></tr>
+        <tr><td>黯黑</td><td>陈久瘀血</td><td><span style="color:#333">⬤</span></td></tr>
+      </table>
+      <p class="src">综合壮医目诊规律与王今觉《望目辨证诊断学》血络颜色主病整理。</p>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">形</span>血络形态主病（王今觉）</h2>
+      <table class="rpt">
+        <tr><th>特征</th><th>主病含义</th></tr>
+        <tr><td>短（不超眼睑）</td><td>病轻</td></tr>
+        <tr><td>长（超出眼睑）</td><td>病重；长至他脏部位为病及他脏</td></tr>
+        <tr><td>日渐加长</td><td>病证日进；日渐减短为向愈</td></tr>
+        <tr><td>粗</td><td>实热（红粗）</td></tr>
+        <tr><td>细</td><td>虚热、血虚（红细）</td></tr>
+        <tr><td>纡曲 / 弯曲多</td><td>主痛；壮医主急病重病</td></tr>
+        <tr><td>分叉</td><td>病证正在发展</td></tr>
+        <tr><td>浮</td><td>病在表 / 新病</td></tr>
+        <tr><td>沉</td><td>病在里 / 久病</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">位</span>定位规律（壮医目诊）</h2>
+      <ul>
+        <li><b>上下定位</b>：躯体上部疾病在瞳孔水平线以上体现，下部疾病在水平线以下体现。</li>
+        <li><b>内外定位</b>：瞳孔内侧主躯体内侧疾病，外侧主躯体（体侧）疾病。</li>
+        <li><b>左右定位</b>：左眼主躯体左侧疾病，右眼主右侧疾病；部分疾病双眼皆有体现。</li>
+        <li><b>时钟十二分法</b>：以瞳孔为中心将白睛按时钟分为十二区点（12点上、6点下、3点、9点侧），观察各反映区内颜色、血脉、斑点讯号。</li>
+        <li><b>黑睛七环</b>：虹膜分七环，第 6 环为器官投映节段。</li>
+      </ul>
+      <h3>五脏白睛分区（综合五轮学说与望目辨证）</h3>
+      <table class="rpt">
+        <tr><th>脏腑</th><th>白睛对应区域</th></tr>
+        <tr><td>心</td><td>内眦（近鼻侧眼角）及其水平延展区</td></tr>
+        <tr><td>肺</td><td>白睛上部、颞侧上方区域</td></tr>
+        <tr><td>肝</td><td>黑睛属肝；白睛外下（颞侧下方）区域</td></tr>
+        <tr><td>脾</td><td>瞳孔水平线下方正中区域两侧</td></tr>
+        <tr><td>肾</td><td>瞳孔水平线上方正中区域两侧</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">斑</span>白睛斑点主病</h2>
+      <ul>
+        <li><b>黑斑 / 黑点 / 黯斑</b>：体内有瘀毒，龙路火路不通之证；黯色斑为陈久瘀血，黯红斑为血瘀夹湿邪郁热，紫红斑为高热性血瘀实证。</li>
+        <li><b>蓝点 / 蓝斑</b>：谷道虫毒内积之症。</li>
+        <li><b>灰色斑</b>：湿阻气机、痰饮郁积。</li>
+        <li><b>黄褐斑/片</b>：湿浊、黄疸类病证宜结合全身检查。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============ 理论来源 ============ -->
+  <div class="page kb" id="p-about">
+    <div class="card">
+      <h2><span class="n">源</span>理论依据</h2>
+      <h3>《望目辨证诊断学》· 王今觉 · 2013</h3>
+      <p class="tips">"望目辨证"是观察双眼白睛特征和白睛血络特征出现的部位、形态、颜色、长度、宽度、浮沉、相互关系及变化，以中医脏象理论为根本，辨析脏腑疾病证候的诊断法。正常白睛明润光洁，血络不显著、位于穹窿部，短而圆滑流畅、粗细适中、颜色红活；患病后可见斑、条、点、丘、岗等形态特征与沉浮、粗细、弯曲、纡曲、分叉、交叉、结花、成网、怒张等血络特征。淡主气虚、粉主血虚、红主热、绛主热甚、殷红主阴虚；纡曲主痛、分叉主病进；短为病轻、长为病重。</p>
+      <h3>《观目诊病》· 李彤 · 1991（广西民族出版社）</h3>
+      <p class="tips">诊法类中医著作，全书九章，论述目诊概况、发展简史、特点、临床意义与局限性，并梳理《内经》、张仲景等医家目诊经验，详述望白睛、望黑睛、望瞳神、望胞睑、望两眦、望眉毛及全身病在目的表现。所论述"观目诊病法"2017 年以"瑶医观目诊病法"列入广西壮族自治区级非物质文化遗产代表性项目名录，本书亦列为壮医诊断学教学参考书目。</p>
+      <h3>壮医目诊研究概要</h3>
+      <p class="tips">壮医认为"勒答"（眼睛）为天地人三气之精华所注，三道两路之精气皆上注于目，病理状态下目能反映百病。壮医目诊由广西东兰黄老五创立，1986 年设立目诊门诊，1990—1991 年列为自治区级与国家级科研课题，2003 年列入南宁市非遗、2018 年列入自治区级非遗。其采取分区诊察法（黑睛诊法、白睛诊法、天地人三部形色目诊），以望白睛最为常用，对谷道"咪胴"病变、癥积（癌症）等有早期预测价值。目诊通过白睛血络（龙路、火路微小分支）颜色深浅、弯曲频度、混浊、散乱、斑点及所在反映区判断病位、病性、病势。</p>
+      <div class="intro-quote">"五脏六腑之精气，皆上注于目而为之精。" —— 《灵枢·大惑论》</div>
+      <div class="intro-quote">"视目之五色，以知五脏，而决死生。" —— 《灵枢·邪客》</div>
+    </div>
+    <div class="card">
+      <h2><span class="n">法</span>检查规范（壮医目诊）</h2>
+      <ul>
+        <li>患者取坐位，双目平视后缓缓转动眼球。</li>
+        <li>医者一手持放大镜、一手持手电筒由远及近照射。</li>
+        <li>分开上下眼睑，嘱患者视线集中于自己脚尖，充分暴露白睛。</li>
+        <li>重点观察各反映区内颜色、斑点、血脉的弯曲度、分布、走向及色泽。</li>
+      </ul>
+      <p class="src">本应用以图像算法模拟上述人工诊察流程，仅供学习与健康管理参考。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 相机层 -->
+<div id="camPanel">
+  <div class="cam-tip">将<b>一只眼睛</b>置于圆框中央，光线充足，正视镜头</div>
+  <div class="oval"></div>
+  <video id="video" autoplay playsinline muted></video>
+  <div class="cam-btns">
+    <button class="cam-close" onclick="closeCam()">关闭</button>
+    <div class="cam-circle" onclick="snap()"></div>
+    <div style="width:70px"></div>
+  </div>
+</div>
+
+<dialog id="errDlg"><div id="errTxt" style="font-size:14px"></div><button class="btn" onclick="document.getElementById('errDlg').close()">知道了</button></dialog>
+
+<footer><b>仅供健康管理参考</b> · 不构成医疗诊断 · 如有不适请及时就医</footer>
+
+<script>
+"use strict";
+/* ================================================================
+   望目智诊 —— 拍眼分析引擎
+   理论：壮医目诊（黄老五）· 王今觉《望目辨证诊断学》· 李彤《观目诊病》
+   ================================================================ */
+
+const $ = id => document.getElementById(id);
+let state = {
+  img: null,          // 原图 (HTMLImageElement)
+  bitmap: null,       // 处理用 ImageData
+  W: 0, H: 0,
+  iris: null,         // {x,y,r}
+  eye: "left",        // left / right（照片中所见）
+  mirrored: true,     // 自拍镜像
+  busy: false
+};
+
+/* ---------- UI 切换 ---------- */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+    document.querySelectorAll(".page").forEach(x=>x.classList.remove("on"));
+    t.classList.add("on");
+    $(t.dataset.p).classList.add("on");
+    window.scrollTo(0,0);
+  };
+});
+function bindSeg(segId, key){
+  const seg = $(segId);
+  seg.querySelectorAll("div").forEach(d=>{
+    d.onclick = ()=>{
+      seg.querySelectorAll("div").forEach(x=>x.classList.remove("on"));
+      d.classList.add("on");
+      state[key] = d.dataset.v;
+      if(state.iris) drawStage();
+    };
+  });
+}
+bindSeg("eyeSeg","eye");
+bindSeg("mirrorSeg","mirrored");
+
+function err(msg){
+  $("errTxt").textContent = msg;
+  $("errDlg").showModal();
+}
+
+/* ---------- 相机 ---------- */
+let stream = null;
+async function openCam(){
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:1280}},audio:false});
+    $("camPanel").classList.add("on");
+    $("video").srcObject = stream;
+  }catch(e){
+    err("无法调用摄像头，请改用「上传」方式，或检查浏览器权限设置。");
+  }
+}
+function closeCam(){
+  $("camPanel").classList.remove("on");
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+}
+function snap(){
+  const v = $("video");
+  const s = Math.min(v.videoWidth, v.videoHeight);
+  const c = document.createElement("canvas");
+  c.width = s; c.height = s;
+  const ctx = c.getContext("2d");
+  // 前置摄像头取景通常已镜像 → 拍出与所见一致
+  ctx.translate(c.width,0); ctx.scale(-1,1);
+  ctx.drawImage(v, (v.videoWidth-s)/2, (v.videoHeight-s)/2, s, s, 0,0,s,s);
+  closeCam();
+  loadBitmapFromCanvas(c, true);
+}
+
+/* ---------- 图片载入 ---------- */
+$("fileInput").onchange = e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const url = URL.createObjectURL(f);
+  const img = new Image();
+  img.onload = ()=>{ URL.revokeObjectURL(url); loadBitmapFromImg(img); };
+  img.onerror = ()=> err("图片读取失败，请换一张清晰的眼睛照片。");
+  img.src = url;
+  e.target.value = "";
+};
+
+function loadBitmapFromCanvas(c){ 
+  const img = new Image();
+  img.onload = ()=> loadBitmapFromImg(img);
+  img.src = c.toDataURL("image/jpeg",0.92);
+}
+function loadBitmapFromImg(img){
+  state.img = img;
+  // 缩放到处理尺寸
+  const MAX = 560;
+  const sc = Math.min(1, MAX/Math.max(img.width,img.height));
+  state.W = Math.round(img.width*sc); state.H = Math.round(img.height*sc);
+  const c = document.createElement("canvas");
+  c.width = state.W; c.height = state.H;
+  const ctx = c.getContext("2d");
+  ctx.drawImage(img,0,0,state.W,state.H);
+  state.bitmap = ctx.getImageData(0,0,state.W,state.H);
+  state.iris = detectIris();
+  $("labelCard").style.display = "block";
+  $("resultWrap").style.display = "none";
+  $("labelCard").scrollIntoView({behavior:"smooth"});
+  drawStage();
+  if(!state.iris) $("stageTip").innerHTML = "未自动检测到瞳孔，请<b>直接点击图中瞳孔（黑睛）中心</b>。";
+  else $("stageTip").innerHTML = "检测到瞳孔位置（绿圈）。若不准确，请<b>直接点击图中瞳孔（黑睛）中心</b>进行修正。";
+}
+
+/* 点击修正瞳孔 */
+$("imgCanvas").onclick = e=>{
+  const r = $("imgCanvas").getBoundingClientRect();
+  const x = (e.clientX-r.left)/r.width*state.W;
+  const y = (e.clientY-r.top)/r.height*state.H;
+  const rad = state.iris? state.iris.r : estimateIrisR(x,y);
+  state.iris = {x,y,r:rad};
+  $("stageTip").innerHTML = "已手动标记瞳孔（绿圈）。可继续点击微调。";
+  drawStage();
+};
+function estimateIrisR(cx,cy){
+  // 从点击位置向四周探测暗→亮边界
+  const d = state.bitmap.data, W=state.W,H=state.H;
+  let maxR = Math.min(W,H)*0.3;
+  let rs=[];
+  for(let a=0;a<16;a++){
+    const th=a/16*Math.PI*2; let last=0;
+    for(let r=4;r<maxR;r++){
+      const x=Math.round(cx+Math.cos(th)*r), y=Math.round(cy+Math.sin(th)*r);
+      if(x<0||y<0||x>=W||y>=H) break;
+      const i=(y*W+x)*4;
+      const L=(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2])/255;
+      if(L>0.45 && last<=0.45){ rs.push(r); break; }
+      last=L;
+    }
+  }
+  rs.sort((a,b)=>a-b);
+  return rs.length? rs[Math.floor(rs.length/2)] : Math.min(W,H)*0.12;
+}
+
+/* ---------- 虹膜自动检测 ---------- */
+function detectIris(){
+  const data = state.bitmap.data, W = state.W, H = state.H;
+  // 中央 70% 区域找暗像素质心
+  const x0=Math.floor(W*0.15),x1=Math.ceil(W*0.85),y0=Math.floor(H*0.15),y1=Math.ceil(H*0.85);
+  let sx=0,sy=0,n=0;
+  const dark=[];
+  for(let y=y0;y<y1;y+=2) for(let x=x0;x<x1;x+=2){
+    const i=(y*W+x)*4;
+    const L=(0.299*data[i]+0.587*data[i+1]+0.114*data[i+2])/255;
+    if(L<0.28){ sx+=x;sy+=y;n++; dark.push([x,y]); }
+  }
+  if(n<80) return null;
+  const cx=sx/n, cy=sy/n;
+  // 半径 = 暗像素面积/π 开方（限幅）
+  let r=Math.sqrt(n*4/Math.PI);
+  r=Math.max(Math.min(W,H)*0.07, Math.min(r, Math.min(W,H)*0.28));
+  // 过滤离群后重算质心
+  let sx2=0,sy2=0,n2=0;
+  for(const [x,y] of dark){
+    if(Math.hypot(x-cx,y-cy) < r*1.35){sx2+=x;sy2+=y;n2++;}
+  }
+  if(n2>n*0.4){ return {x:sx2/n2,y:sy2/n2,r}; }
+  return {x:cx,y:cy,r};
+}
+
+/* ---------- 阶段画布 ---------- */
+function drawStage(){
+  const c=$("imgCanvas"), ctx=c.getContext("2d");
+  c.width=state.W; c.height=state.H;
+  ctx.drawImage(state.img,0,0,state.W,state.H);
+  const {x,y,r}=state.iris;
+  ctx.strokeStyle="#3d6b5e"; ctx.lineWidth=Math.max(2,state.W*0.006);
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke();
+  ctx.strokeStyle="rgba(255,255,255,.8)"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(x,y,r*0.45,0,Math.PI*2); ctx.stroke();
+  // 水平参考线
+  ctx.setLineDash([6,6]);
+  ctx.strokeStyle="rgba(168,58,42,.8)";
+  ctx.beginPath(); ctx.moveTo(x-r*3.4,y); ctx.lineTo(x+r*3.4,y); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+/* ================================================================
+   分析引擎
+   ================================================================ */
+function rgb2hsl(r,g,b){
+  r/=255;g/=255;b/=255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b);
+  let h=0,s=0; const l=(mx+mn)/2;
+  if(mx!==mn){
+    const d=mx-mn;
+    s=l>0.5? d/(2-mx-mn): d/(mx+mn);
+    if(mx===r) h=((g-b)/d+(g<b?6:0));
+    else if(mx===g) h=(b-r)/d+2;
+    else h=(r-g)/d+4;
+    h*=60;
+  }
+  return [h,s,l];
+}
+
+function analyzeImage(){
+  const data = state.bitmap.data, W = state.W, H = state.H;
+  const iris=state.iris;
+  const hsl=new Float32Array(W*H*3);
+  for(let i=0,p=0;i<data.length;i+=4,p+=3){
+    const [h,s,l]=rgb2hsl(data[i],data[i+1],data[i+2]);
+    hsl[p]=h;hsl[p+1]=s;hsl[p+2]=l;
+  }
+  const px=(x,y)=>(y*W+x)*3;
+
+  /* 分类掩膜 */
+  const CAT={SCLERA:1,VESSEL:2,SPOT:3,BLUE:4,YELLOW:5};
+  const mask=new Uint8Array(W*H);
+  const maxDist = iris.r*3.6;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const p=px(x,y), h=hsl[p], s=hsl[p+1], l=hsl[p+2];
+    const dist=Math.hypot(x-iris.x,y-iris.y);
+    if(dist<iris.r*0.95 || dist>maxDist) continue;      // 虹膜内/过远不参与
+    if(l>0.34 && s<0.30){                                 // 低饱和亮色 → 白睛（优先）
+      mask[y*W+x]=CAT.SCLERA;
+    } else if(s>=0.26 && l>0.1){
+      if(h>=335||h<=25) mask[y*W+x]=CAT.VESSEL;           // 红
+      else if(h>25&&h<38 && l<0.78) mask[y*W+x]=CAT.VESSEL; // 橙红络脉
+      else if(h>=38&&h<75 && l>=0.4 && l<0.88 && s>=0.30) mask[y*W+x]=CAT.YELLOW; // 黄浊
+      else if(h>=260&&h<335) mask[y*W+x]=CAT.VESSEL;      // 紫红
+      else if(h>=180&&h<260 && l>0.18) mask[y*W+x]=CAT.BLUE; // 蓝（蓝斑/青络）
+      else if(s<0.42 && l>0.35) mask[y*W+x]=CAT.SCLERA;   // 宽松白睛兜底
+    } else if(l<=0.34 && l>0.05 && s<0.55){
+      // 白睛附近的暗斑
+      let nearSclera=false;
+      for(let dy=-3;dy<=3&&!nearSclera;dy++)for(let dx=-3;dx<=3;dx++){
+        const nx=x+dx,ny=y+dy;
+        if(nx>=0&&ny>=0&&nx<W&&ny<H&&mask[ny*W+nx]===CAT.SCLERA){nearSclera=true;break;}
+      }
+      if(nearSclera) mask[y*W+x]=CAT.SPOT;
+    }
+  }
+
+  /* 血络在白睛附近的判定：VESSEL 需邻近白睛（用于计算邻白比例、排除皮肤） */
+  const vesselNear=new Uint8Array(W*H);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    if(mask[y*W+x]!==CAT.VESSEL) continue;
+    let near=false;
+    for(let dy=-4;dy<=4&&!near;dy++)for(let dx=-4;dx<=4;dx++){
+      const nx=x+dx,ny=y+dy;
+      if(nx>=0&&ny>=0&&nx<W&&ny<H&&mask[ny*W+nx]===CAT.SCLERA){near=true;break;}
+    }
+    if(near) vesselNear[y*W+x]=1;
+  }
+
+  /* 连通域（血络，基于 VESSEL 掩膜，附邻白比例） */
+  const vessels = connectedComponents((x,y)=>mask[y*W+x]===CAT.VESSEL, 12)
+    .map(v=>{
+      let near=0;
+      for(const [x,y] of v.pts) if(vesselNear[y*W+x]) near++;
+      v.nearMask=vesselNear;
+      v.nearRatio=near/v.pts.length;
+      return v;
+    });
+  /* 连通域（斑点/蓝斑） */
+  const spots   = connectedComponents((x,y)=>mask[y*W+x]===CAT.SPOT||mask[y*W+x]===CAT.BLUE, 6, 400);
+
+  /* 统计 */
+  let sclN=0,yellowN=0,sclLsum=0,sclSsum=0;
+  for(let i=0;i<W*H;i++){
+    if(mask[i]===CAT.SCLERA){sclN++;sclLsum+=hsl[i*3+2];sclSsum+=hsl[i*3+1];}
+    if(mask[i]===CAT.YELLOW)yellowN++;
+  }
+
+  const feats = vessels.map(v=>{
+    const pts=v.pts;
+    let sSum=0,lSum=0,hRed=0,hPurple=0,nearScl=0;
+    for(const [x,y] of pts){
+      const p=px(x,y);sSum+=hsl[p+1];lSum+=hsl[p+2];
+      if(hsl[p]<40||hsl[p]>330)hRed++;else hPurple++;
+      if(v.nearMask[y*W+x]) nearScl++;
+    }
+    const s=sSum/pts.length, l=lSum/pts.length;
+    const geo=pca(pts);
+    const mainLen=geo.len, width=pts.length/Math.max(1,mainLen);
+    const bend=geo.bend;
+    const dist=Math.hypot(v.cx-iris.x,v.cy-iris.y)/iris.r;
+    return {pts,cx:v.cx,cy:v.cy,area:pts.length,s,l,hue:hPurple>hRed?"purple":"red",
+            len:mainLen,width,bend,dist,nearRatio:nearScl/pts.length,
+            clock:clockPos(v.cx,v.cy)};
+  }).filter(v=>v.area>=25 && v.len>8 && v.dist>=1.05 && v.dist<=3.2 && v.nearRatio>=0.5);
+
+  return {mask,vessels:feats,spots,sclN,yellowN,
+          sclL:sclN?sclLsum/sclN:0, sclS:sclN?sclSsum/sclN:0, hsl, CAT};
+}
+
+/* 连通域：func(x,y) 判定；minArea 过滤；maxArea 上限（默认无限） */
+function connectedComponents(func,minArea,maxArea=Infinity){
+  const {W,H}=state;
+  const seen=new Uint8Array(W*H);
+  const out=[];
+  const stack=[];
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    if(seen[y*W+x]||!func(x,y)) continue;
+    stack.length=0; stack.push(x,y); seen[y*W+x]=1;
+    const pts=[];
+    while(stack.length){
+      const cy=stack.pop(),cx=stack.pop();
+      pts.push([cx,cy]);
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        const nx=cx+dx,ny=cy+dy;
+        if(nx<0||ny<0||nx>=W||ny>=H||seen[ny*W+nx])continue;
+        if(func(nx,ny)){seen[ny*W+nx]=1;stack.push(nx,ny);}
+      }
+    }
+    if(pts.length>=minArea&&pts.length<=maxArea){
+      let sx=0,sy=0;for(const[a,b]of pts){sx+=a;sy+=b;}
+      out.push({pts,cx:sx/pts.length,cy:sy/pts.length});
+    }
+  }
+  return out;
+}
+
+/* PCA：返回主轴长度、宽度、垂直 RMS（弯曲度） */
+function pca(pts){
+  let mx=0,my=0;
+  for(const[a,b]of pts){mx+=a;my+=b;}
+  mx/=pts.length;my/=pts.length;
+  let sxx=0,syy=0,sxy=0;
+  for(const[a,b]of pts){const dx=a-mx,dy=b-my;sxx+=dx*dx;syy+=dy*dy;sxy+=dx*dy;}
+  const n=pts.length;
+  const t=(sxx+syy)/n, d=Math.sqrt(Math.max(0,(sxx-syy)*(sxx-syy)+4*sxy*sxy))/n;
+  const v1=(t+d)/2, v2=(t-d)/2;              // 归一化特征方差
+  const len=4*Math.sqrt(v1);                  // 主轴 ±2σ 跨度
+  const rms=Math.sqrt(v2);
+  return {len:Math.max(1,len), rms, bend:Math.sqrt(v2/Math.max(1e-6,v1))};
+}
+
+/* 时钟方位：以瞳孔为心，12=上（ang: 0=右, 90=上, 180=左, 270=下） */
+function clockPos(x,y){
+  const {iris}=state;
+  const ang=Math.atan2(iris.y-y, x-iris.x)*180/Math.PI;
+  let hour=Math.round((90-ang)/30)%12;   // 12点=上, 3点=右, 6点=下, 9点=左
+  if(hour<=0)hour+=12;
+  return hour;
+}
+
+/* 鼻侧/颞侧方向：照片所见镜像与左右眼换算
+   屏幕上：自拍镜像 → 所见即镜子所见 → 左眼在左、鼻侧朝图片右侧（朝画面中央）
+   他人拍摄 → 左眼显示在图片右侧，鼻侧朝图片左（画面中央） */
+function noseSide(){
+  // 返回鼻侧在图片中的方向: +1 = 图片右侧, -1 = 图片左侧
+  if(state.mirrored){ return state.eye==="left" ? +1 : -1; }
+  else { return state.eye==="left" ? -1 : +1; }
+}
+
+/* 角度（0=图片右,90=上）→ 时钟；上下/内外 */
+function zoneOf(v){
+  const {iris}=state;
+  const dx=v.cx-iris.x, dy=v.cy-iris.y;
+  const hour=v.clock;
+  const upper = v.cy < iris.y;
+  const noseDir = noseSide();
+  const medial = (noseDir>0) ? (dx>0) : (dx<0); // 鼻侧=内侧
+  return {hour,upper,medial};
+}
+
+/* 五脏区判定：以瞳孔为心，角度扇区（角度: 0=图片右, 90=图片上, 180=左, 270=下）
+   统一换算到"鼻侧/颞侧"坐标：noseAngle（0=鼻侧水平，逆时针为正） */
+function organZone(v){
+  const {iris}=state;
+  const dx=v.cx-iris.x, dy=iris.y-v.cy;
+  let ang=Math.atan2(dy,dx)*180/Math.PI; // 0=右,90=上
+  // 换算：鼻侧为 0 度
+  const nose = noseSide(); // 鼻侧屏幕方向
+  let rel = nose>0 ? ang : 180-ang;  // 现在以鼻侧=0
+  rel=(rel%360+360)%360;
+  // rel: 0=鼻侧, 90=上, 180=颞侧, 270=下
+  const inRange=(a,b)=>{ // 环形区间
+    if(a<=b) return rel>=a&&rel<=b;
+    return rel>=a||rel<=b;
+  };
+  if(inRange(335,360)||inRange(0,25)) return "心";       // 内眦水平
+  if(inRange(60,80)||inRange(100,120)) return "肾";      // 正上两侧
+  if(inRange(240,262)||inRange(278,300)) return "脾";    // 正下两侧
+  if(inRange(125,175)) return "肺";                       // 颞上
+  if(inRange(185,235)) return "肝";                       // 颞下
+  if(inRange(25,55)) return "心";                         // 鼻上近心
+  if(inRange(305,332)) return "脾胃";                     // 内下
+  return null;
+}
+
+/* 躯体区域提示（壮医上下内外规律） */
+function bodyZone(z){
+  const parts=[];
+  parts.push(z.upper?"躯体上部（头面、颈项、胸背、上肢）":"躯体下部（腹部、腰胯、下肢、足）");
+  parts.push(z.medial?"躯体内侧（中线附近脏腑）":"躯体偏外侧（体侧、四肢外侧）");
+  return parts;
+}
+
+/* ================================================================
+   报告生成
+   ================================================================ */
+function colorGrade(v){
+  const {s,l}=v;
+  if(v.hue==="purple"||(l<0.28&&s>=0.4)) return {name:"紫红/黯红",cls:"b-bad",
+    mean:"高热性血瘀实证或血瘀日久之征",color:"#7a1030"};
+  if(s>=0.60&&l<0.52) return {name:"绛红",cls:"b-bad",
+    mean:"热甚；壮医主宿疾（病久）",color:"#8c1a12"};
+  if(s>=0.48&&l<0.66) return {name:"殷红",cls:"b-warn",
+    mean:"阴虚证之眼象表现",color:"#a52a25"};
+  if(s>=0.30) return {name:"鲜红",cls:"b-info",
+    mean:"热证；新病不久或病较轻",color:"#d43a2f"};
+  return {name:"淡红/粉红",cls:"b-ok",
+    mean:"气虚或血虚之象；病轻",color:"#e89a8a"};
+}
+function bendGrade(b){
+  if(b>0.30) return {name:"纡曲/螺旋",cls:"b-bad",mean:"主痛证；壮医主急病、重病"};
+  if(b>0.18) return {name:"弯曲明显",cls:"b-warn",mean:"气滞不畅，病情偏重或疼痛倾向"};
+  if(b>0.08) return {name:"微弯",cls:"b-info",mean:"气血欠畅，病情一般"};
+  return {name:"圆滑流畅",cls:"b-ok",mean:"正常形态，血络流畅"};
+}
+function widthGrade(w){
+  if(w>6) return {name:"粗",cls:"b-bad",mean:"红粗主实热；怒张之象"};
+  if(w>3.5) return {name:"中等",cls:"b-info",mean:"粗细适中"};
+  return {name:"细",cls:"b-warn",mean:"红细主虚热；细主血虚"};
+}
+function lenGrade(len){
+  const ratio=len/state.iris.r;
+  if(ratio>2.4) return {name:"长",cls:"b-bad",mean:"长为病重；若延及他脏分区，为病证发展涉及他脏"};
+  if(ratio>1.2) return {name:"中长",cls:"b-warn",mean:"病情较明显，宜关注发展"};
+  return {name:"短",cls:"b-ok",mean:"短为病轻"};
+}
+
+function runAnalysis(){
+  if(!state.iris){ err("请先点击图中瞳孔（黑睛）中心进行标记。"); return; }
+  if(state.busy) return;
+  state.busy=true;
+  $("labelCard").style.display="none";
+  $("resultWrap").style.display="none";
+  const loading=$("loading"); loading.classList.add("on");
+  const dots=loading.querySelectorAll(".step-dots i");
+  const steps=["正在辨识白睛区域…","正在提取白睛血络…","正在分析形色特征…","正在比对目诊规律…","正在生成分析报告…"];
+  let si=0;
+  const timer=setInterval(()=>{
+    si=Math.min(si+1,steps.length-1);
+    $("loadingTxt").textContent=steps[si];
+    dots.forEach((d,i)=>d.classList.toggle("on",i<=si));
+  },650);
+
+  setTimeout(()=>{
+    try{
+      const res=analyzeImage();
+      const html=buildReport(res);
+      clearInterval(timer);
+      loading.classList.remove("on");
+      dots.forEach(d=>d.classList.remove("on"));
+      const wrap=$("resultWrap");
+      wrap.innerHTML=html; wrap.style.display="block";
+      wrap.scrollIntoView({behavior:"smooth"});
+    }catch(e){
+      clearInterval(timer); loading.classList.remove("on");
+      err("分析过程出现异常，请更换更清晰的照片重试。");
+    }
+    state.busy=false;
+  }, 3400);
+}
+
+function buildReport(res){
+  const {vessels,spots,sclN,yellowN,sclL,sclS}=res;
+  const parts=[];
+  const eyeName=state.eye==="left"?"左眼":"右眼";
+  const tooSmall = sclN < state.W*state.H*0.015;
+
+  /* 可视化 */
+  parts.push(`<div class="card">
+    <h2><span class="n">图</span>特征标注图（${eyeName}）</h2>
+    <div id="overlayWrap"><canvas id="overlayCanvas"></canvas></div>
+    <div class="legend">
+      <span><i style="background:rgba(61,107,94,.9)"></i>瞳孔/水平线</span>
+      <span><i style="background:rgba(216,58,47,.95)"></i>血络</span>
+      <span><i style="background:#222"></i>暗斑</span>
+      <span><i style="background:#3a5a8c"></i>蓝斑</span>
+      <span><i style="background:rgba(138,109,59,.8)"></i>黄浊</span>
+    </div>
+  </div>`);
+
+  /* 总体 */
+  parts.push(`<div class="card"><h2><span class="n">壹</span>白睛总体概况</h2>`);
+  if(tooSmall){
+    parts.push(`<p class="tips">⚠️ 照片中可辨识的白睛区域较小（约占画面 ${ (sclN/(state.W*state.H)*100).toFixed(1) }%），建议重新拍摄：光线充足、微微下视、充分暴露白睛后再次分析，结果会更可靠。</p>`);
+  }
+  const gloss = sclL>0.72? "明润有光泽（亮度指数 "+sclL.toFixed(2)+"）"
+             : sclL>0.55? "尚润泽（亮度指数 "+sclL.toFixed(2)+"）"
+             : "偏晦暗欠润（亮度指数 "+sclL.toFixed(2)+"），提示津液不足或疲劳之象";
+  const turbidRatio = sclN? yellowN/sclN : 0;
+  let turbid={name:"清亮",cls:"b-ok",mean:"白睛清亮，未见明显湿浊之象"};
+  if(turbidRatio>0.28) turbid={name:"混浊明显",cls:"b-bad",mean:"白睛混浊、边界浸润模糊，壮医主<b>湿毒</b>为患；灰黄之色亦提示痰湿郁积"};
+  else if(turbidRatio>0.12) turbid={name:"轻度混浊",cls:"b-warn",mean:"白睛略显混浊，提示轻度湿浊内生，宜健脾化湿"};
+  parts.push(`
+    <table class="rpt">
+      <tr><th>项目</th><th>观察结果</th><th>目诊含义</th></tr>
+      <tr><td>白睛光泽</td><td><span class="badge b-info">${gloss.split("（")[0]}</span></td><td>${gloss}</td></tr>
+      <tr><td>混浊程度</td><td><span class="badge ${turbid.cls}">${turbid.name}</span><br><small>黄浊区占白睛 ${(turbidRatio*100).toFixed(1)}%</small></td><td>${turbid.mean}</td></tr>
+      <tr><td>白睛底色饱和度</td><td>${sclS.toFixed(2)}（&lt;0.15 为洁净）</td><td>${sclS>0.2?"底色偏深，提示慢性刺激或宿疾之象":"底色洁净，属正常范围"}</td></tr>
+    </table>`);
+  parts.push(`</div>`);
+
+  /* 血络 */
+  parts.push(`<div class="card"><h2><span class="n">贰</span>白睛血络形色分析</h2>`);
+  if(vessels.length===0){
+    parts.push(`<p class="tips">未检出明显增显的血络 —— <b>正常白睛明润光洁，血络不显著、位于穹窿部</b>，此为无病或病轻之象。✅</p>`);
+  }else{
+    // 汇总
+    const bigVessels=vessels.filter(v=>v.area>=30);
+    const main=bigVessels.length?bigVessels:vessels;
+    const cg=main.map(colorGrade).sort((a,b)=>({淡红:0,鲜红:1,殷红:2,绛红:3}[a.name.slice(0,2)]??1));
+    const colorTop=cg[cg.length-1];
+    const avgBend=main.reduce((s,v)=>s+v.bend,0)/main.length;
+    const avgDist=main.reduce((s,v)=>s+v.dist,0)/main.length;
+    const bg=bendGrade(avgBend);
+    const distCls = avgDist<1.75? {name:"近瞳",cls:"b-bad",mean:"脉络多而集中、靠近瞳仁，壮医主<b>火毒热毒</b>为患"}
+                  : avgDist>2.55? {name:"靠边",cls:"b-info",mean:"脉络分散、远离瞳仁，壮医主<b>寒湿之毒或风寒之毒</b>"}
+                  : {name:"居中",cls:"b-ok",mean:"分布位置适中，无明显寒热偏颇"};
+    // 散乱
+    const nV=main.length;
+    let angles=main.map(v=>Math.atan2(v.cy-state.iris.y,v.cx-state.iris.x));
+    let angVar=0; const angMean=angles.reduce((s,a)=>s+a,0)/angles.length;
+    angles.forEach(a=>{let d=a-angMean;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;angVar+=d*d;});
+    angVar=Math.sqrt(angVar/angles.length);
+    const scatter = nV>=6&&angVar>1.1? {name:"散乱",cls:"b-bad",mean:"脉络多而散乱、分布无规则，壮医主<b>风毒</b>作祟"}
+                  : nV>=4? {name:"较多",cls:"b-warn",mean:"脉络偏多，气血壅滞之象"}
+                  : {name:"规则",cls:"b-ok",mean:"脉络分布尚规则"};
+    const maxLen=Math.max(...main.map(v=>v.len));
+    const lg=lenGrade(maxLen);
+    const avgW=main.reduce((s,v)=>s+v.width,0)/main.length;
+    const wg=widthGrade(avgW);
+
+    parts.push(`
+      <p class="tips">共检出显络 <b>${nV}</b> 条（≥阈值的血络连通域）。下列判定为综合特征，分级仅供参考。</p>
+      <h3>① 颜色（着色深浅判新久）</h3>
+      <div class="colorchips chipwrap">
+        <div class="chip" style="background:#e89a8a"><small>淡红·气虚</small></div>
+        <div class="chip" style="background:#e2726b"><small>粉红·血虚</small></div>
+        <div class="chip" style="background:#d43a2f"><small>鲜红·新病</small></div>
+        <div class="chip" style="background:#a52a25"><small>殷红·阴虚</small></div>
+        <div class="chip" style="background:#8c1a12"><small>绛红·宿疾</small></div>
+        <div class="chip" style="background:#7a1030"><small>紫红·血瘀</small></div>
+      </div>
+      <table class="rpt">
+        <tr><th>项目</th><th>判定</th><th>目诊含义</th></tr>
+        <tr><td>络色分级</td><td><span class="badge ${colorTop.cls}">${colorTop.name}</span></td><td>${colorTop.mean}</td></tr>
+        <tr><td>分布位置</td><td><span class="badge ${distCls.cls}">${distCls.name}</span>（距瞳 ${avgDist.toFixed(1)}×虹膜半径）</td><td>${distCls.mean}</td></tr>
+        <tr><td>走行状态</td><td><span class="badge ${bg.cls}">${bg.name}</span>（弯曲指数 ${avgBend.toFixed(2)}）</td><td>${bg.mean}（弯曲频率别轻重）</td></tr>
+        <tr><td>长度</td><td><span class="badge ${lg.cls}">${lg.name}</span>（约 ${(maxLen/state.iris.r).toFixed(1)}×虹膜半径）</td><td>${lg.mean}</td></tr>
+        <tr><td>宽度</td><td><span class="badge ${wg.cls}">${wg.name}</span>（均值 ${avgW.toFixed(1)}px）</td><td>${wg.mean}</td></tr>
+        <tr><td>散乱度</td><td><span class="badge ${scatter.cls}">${scatter.name}</span>（${nV} 条 / 角散度 ${angVar.toFixed(2)}）</td><td>${scatter.mean}</td></tr>
+      </table>`);
+
+    /* 分区明细 */
+    parts.push(`<h3>② 分区提示（时钟定位 + 脏腑投映）</h3><p class="tips">按壮医"白睛时钟十二等分法"与上下内外定位规律，结合五脏白睛分区综合判定：</p>
+      <table class="rpt"><tr><th>时钟位</th><th>分区</th><th>特征</th><th>提示</th></tr>`);
+    const seen={};
+    vessels.slice().sort((a,b)=>b.area-a.area).slice(0,8).forEach(v=>{
+      const z=zoneOf(v), org=organZone(v);
+      const key=z.hour+"-"+(org||"无");
+      if(seen[key])return; seen[key]=1;
+      const cg2=colorGrade(v), bg2=bendGrade(v.bend);
+      const body=bodyZone(z).join("，");
+      parts.push(`<tr><td>${z.hour} 点</td><td>${org?`<b>${org}</b>区`:"—"}<br><small>${z.medial?"内侧":"外侧"}·${z.upper?"上部":"下部"}</small></td>
+        <td><span class="badge ${cg2.cls}" style="margin-bottom:2px">${cg2.name}</span><br><small>${bg2.name}</small></td>
+        <td style="font-size:12px">${cg2.mean}；${bg2.mean}。<br>壮医定位：${body}。</td></tr>`);
+    });
+    parts.push(`</table><p class="src">※ 左眼主躯体左侧、右眼主右侧；上病见于瞳上、下病见于瞳下；内侧主躯体内侧、外侧主体侧。</p>`);
+  }
+  parts.push(`</div>`);
+
+  /* 斑点 */
+  parts.push(`<div class="card"><h2><span class="n">叁</span>斑点检测（黑斑瘀来蓝斑虫）</h2>`);
+  if(!spots.length){
+    parts.push(`<p class="tips">未在白睛区域检出明显黑斑、蓝斑 —— 未见瘀毒、虫毒之目诊信号。✅</p>`);
+  }else{
+    parts.push(`<p class="tips">检出 ${spots.length} 处斑点样信号：</p><table class="rpt">
+      <tr><th>位置</th><th>性质</th><th>目诊含义</th></tr>`);
+    spots.slice(0,6).forEach(s=>{
+      const p=(s.cy*state.W+s.cx)*3;
+      const hue=res.hsl[p], sat=res.hsl[p+1];
+      const isBlue = hue>=180&&hue<265&&sat>0.2;
+      const clock=clockPos(s.cx,s.cy), org=organZone({cx:s.cx,cy:s.cy});
+      if(isBlue){
+        parts.push(`<tr><td>${clock} 点${org?`（${org}区）`:""}</td><td><span class="badge b-info">蓝斑</span></td>
+        <td>壮医主<b>谷道虫毒内积</b>之症；蓝色脉络亦主寒证。建议结合大便检查等确认。</td></tr>`);
+      }else{
+        const dark = res.hsl[p+2]<0.25;
+        parts.push(`<tr><td>${clock} 点${org?`（${org}区）`:""}</td><td><span class="badge ${dark?"b-bad":"b-warn"}">${dark?"黑斑":"黯斑"}</span></td>
+        <td>体内有<b>瘀毒</b>，龙路火路不通之象；黯色斑为陈久瘀血，黯红斑为血瘀夹湿邪郁热。若属${org||"相关"}区，宜关注该脏腑血瘀之证。</td></tr>`);
+      }
+    });
+    parts.push(`</table><p class="src">※ 照片中的睫毛阴影、瞳孔边缘、泪阜色素可能被误判为斑，请对照标注图人工确认。</p>`);
+  }
+  parts.push(`</div>`);
+
+  /* 综合 */
+  parts.push(`<div class="card"><h2><span class="n">肆</span>综合印象</h2>`);
+  const tags=[];
+  if(vessels.length){
+    const main=vessels.filter(v=>v.area>=30); const ms=main.length?main:vessels;
+    const avgDist=ms.reduce((s,v)=>s+v.dist,0)/ms.length;
+    const avgBend=ms.reduce((s,v)=>s+v.bend,0)/ms.length;
+    const cgTop=ms.map(colorGrade).map(c=>c.name);
+    const hasJiang=cgTop.some(n=>n.includes("绛")||n.includes("紫"));
+    const hasYin=cgTop.some(n=>n.includes("殷"));
+    const hasFresh=cgTop.some(n=>n.includes("鲜红"));
+    if(hasJiang) tags.push(["hot","热甚/血瘀","络色绛紫，热入营血或血瘀之象，宜清营凉血、活血化瘀"]);
+    else if(hasFresh) tags.push(["hot","热证（新病）","络色鲜红，病属新起或较轻，宜清热、防进展"]);
+    if(hasYin) tags.push(["hot","阴虚倾向","殷红之络为阴虚眼象，宜滋阴，可食山药等调补"]);
+    if(avgDist<1.75) tags.push(["hot","火毒内蕴","脉络近瞳而集中，火毒热毒之象，宜清热解毒、忌辛辣"]);
+    if(avgDist>2.55) tags.push(["cold","寒湿之象","脉络靠边而分散，寒湿或风寒之毒，宜温散寒湿"]);
+    if(avgBend>0.22) tags.push(["hot","气血壅滞/痛证","络行纡曲明显，气滞血瘀作痛之象"]);
+    if(sclN&&yellowN/sclN>0.2) tags.push(["hot","湿毒内蕴","白睛混浊，湿毒为患，宜健脾利湿"]);
+    if(vessels.filter(v=>v.area>=30).length>=6) tags.push(["hot","风毒散乱","血络多而散乱，风毒之象，宜祛风"]);
+  }
+  if(spots.some(s=>{const p=(s.cy*state.W+s.cx)*3;return !(res.hsl[p]>=180&&res.hsl[p]<265&&res.hsl[p+1]>0.2);}))
+    tags.push(["hot","瘀毒之象","白睛见黑黯之斑，瘀毒内积，宜活血化瘀、通调龙路火路"]);
+
+  if(!tags.length){
+    parts.push(`<p><span class="badge b-ok">平和之象</span> 本次照片分析未见明显异常目诊信号。白睛尚润、血络不显或圆滑流畅，属<b>无病或病轻</b>之象。继续保持规律作息与用眼卫生。</p>`);
+  }else{
+    parts.push(`<div>${tags.map(t=>`<span class="tagline ${t[0]}">🏷 ${t[1]}</span>`).join("")}</div>
+      <table class="rpt"><tr><th>印象</th><th>调理建议（食养参考）</th></tr>
+      ${tags.map(t=>`<tr><td><b>${t[1]}</b><br><small>${t[2]}</small></td><td style="font-size:12px">${advice(t[1])}</td></tr>`).join("")}
+      </table>`);
+  }
+  parts.push(`<p class="tips" style="margin-top:8px">📌 <b>复诊对照</b>：目诊重在动态观察。建议每 1～2 周同一光线条件下再拍一张对比 —— 王氏经验：络脉<b>日渐加长为病进，日渐减短为向愈</b>。</p></div>`);
+
+  /* 免责 */
+  parts.push(`<div class="disclaim"><b>⚠️ 重要声明</b><br>
+  本工具依据《望目辨证诊断学》（王今觉，2013）、《观目诊病》（李彤，1991）及壮医目诊公开研究资料构建的规则模型，由图像算法自动识别，受拍照光线、角度、图像质量影响较大，<b>存在误判可能</b>。结果仅作中医目诊知识学习与健康管理参考，<b>不构成医学诊断</b>。若检出异常信号或身体确有不适，请及时到正规医疗机构就诊（壮医目诊可辅助早期预测某些癥积等疾病，确诊仍需现代医学检查）。</div>`);
+
+  /* 操作 */
+  parts.push(`<div class="btnrow">
+    <button class="btn ghost" onclick="document.getElementById('fileInput').click()">📷 换一张照片</button>
+    <button class="btn" onclick="window.print()">📋 导出/保存报告</button>
+  </div>`);
+
+  // 渲染后画叠加图
+  setTimeout(()=>drawOverlay(res),50);
+  return parts.join("");
+}
+
+function advice(tag){
+  const map={
+    "热甚/血瘀":"宜清淡，可食山楂、黑木耳、玫瑰花茶；忌辛辣油炸",
+    "热证（新病）":"宜清热，可饮菊花茶、绿豆汤；注意休息",
+    "阴虚倾向":"宜滋阴，可食山药（阴虚者去皮吃）、百合、银耳",
+    "火毒内蕴":"宜清热解毒，可饮淡竹叶茶、苦瓜；忌烟酒辛辣熬夜",
+    "寒湿之象":"宜温中散寒，可食生姜红糖水、砂仁陈皮；忌生冷",
+    "气血壅滞/痛证":"宜理气活血，可食陈皮、佛手、少量黄酒（成人）",
+    "湿毒内蕴":"宜健脾利湿，可食薏米、赤小豆、茯苓山药粥",
+    "风毒散乱":"宜祛风，避风寒，可食姜葱汤；注意过敏原",
+    "瘀毒之象":"宜活血通络，可食山楂、桃仁（咨询医师）、丹参茶"
+  };
+  return map[tag]||"规律作息，清淡饮食，适度运动";
+}
+
+/* ---------- 叠加可视化 ---------- */
+function drawOverlay(res){
+  const c=$("overlayCanvas"); if(!c)return;
+  const ctx=c.getContext("2d"); if(!ctx||!state.img)return;
+  c.width=state.W; c.height=state.H;
+  ctx.drawImage(state.img,0,0,state.W,state.H);
+  ctx.globalAlpha=0.92;
+  // 血络描红
+  ctx.fillStyle="rgba(216,58,47,.85)";
+  for(const v of res.vessels) for(const [x,y] of v.pts){
+    ctx.fillRect(x-1,y-1,2,2);
+  }
+  // 斑点
+  for(const s of res.spots){
+    const p=(s.cy*state.W+s.cx)*3;
+    const hue=res.hsl[p],sat=res.hsl[p+1];
+    ctx.fillStyle=(hue>=180&&hue<265&&sat>0.2)?"rgba(58,90,140,.9)":"rgba(20,20,20,.9)";
+    for(const [x,y] of s.pts) ctx.fillRect(x,y,1,1);
+  }
+  // 黄浊
+  const oData=state.bitmap.data, oW=state.W, oH=state.H, CAT=res.CAT;
+  ctx.fillStyle="rgba(138,109,59,.45)";
+  for(let y=0;y<oH;y+=1)for(let x=0;x<oW;x++){
+    if(res.mask[y*oW+x]===CAT.YELLOW) ctx.fillRect(x,y,1,1);
+  }
+  ctx.globalAlpha=1;
+  // 瞳孔圈 + 十二时区
+  const {iris}=state;
+  ctx.strokeStyle="rgba(61,107,94,.95)"; ctx.lineWidth=Math.max(2,W*0.005);
+  ctx.beginPath(); ctx.arc(iris.x,iris.y,iris.r,0,Math.PI*2); ctx.stroke();
+  ctx.strokeStyle="rgba(61,107,94,.55)"; ctx.lineWidth=1;
+  const R2=iris.r*3.2;
+  for(let i=0;i<12;i++){
+    const a=i*30*Math.PI/180;
+    ctx.beginPath();
+    ctx.moveTo(iris.x+Math.cos(a)*iris.r*1.08, iris.y-Math.sin(a)*iris.r*1.08);
+    ctx.lineTo(iris.x+Math.cos(a)*R2, iris.y-Math.sin(a)*R2);
+    ctx.stroke();
+    // 时钟数字
+    const tx=iris.x+Math.cos(a)*iris.r*1.55, ty=iris.y-Math.sin(a)*iris.r*1.55;
+    ctx.fillStyle="rgba(61,107,94,.9)";
+    ctx.font=`bold ${Math.max(10,W*0.022)}px sans-serif`;
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.fillText(i===0?12:i,tx,ty);
+  }
+  // 水平线
+  ctx.setLineDash([6,6]);ctx.strokeStyle="rgba(168,58,42,.85)";ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(iris.x-R2,iris.y);ctx.lineTo(iris.x+R2,iris.y);ctx.stroke();
+  ctx.setLineDash([]);
+  // 鼻侧箭头
+  const nd=noseSide();
+  ctx.fillStyle="rgba(168,58,42,.9)";
+  ctx.font=`${Math.max(11,W*0.026)}px sans-serif`;
+  ctx.textAlign="center";
+  ctx.fillText("鼻侧 ▸", iris.x+nd*iris.r*2.2, iris.y-iris.r*1.15);
+  ctx.fillText("◂ 颞侧", iris.x-nd*iris.r*2.2, iris.y-iris.r*1.15);
+}
+</script>
+</body>
+</html>
