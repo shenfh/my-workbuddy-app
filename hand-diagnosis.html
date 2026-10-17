@@ -238,6 +238,45 @@ textarea{width:100%;height:0;opacity:0;position:absolute;left:-9999px}
 .dsec h4{margin:10px 0 4px;color:var(--jade);font-size:14.5px}
 .dsec:first-child h4{margin-top:0}
 .dsec p,.dsec li{font-size:13.8px;margin:4px 0;color:#4a4438}
+/* 外治法 / 中成药 卡片 */
+.therapy{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.th-card{border:1px solid var(--line);border-radius:12px;background:var(--paper-2);padding:11px 13px}
+.th-head{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14.5px;margin-bottom:6px}
+.th-ico{font-size:18px}
+.th-how{font-size:13px;color:#4a4438;line-height:1.7}
+.th-cau{margin-top:7px;font-size:11.5px;color:var(--gold);background:#fbf3df;border-radius:8px;padding:6px 9px;line-height:1.6}
+.meds{border:1px solid var(--line);border-radius:12px;background:#fdfbf6;padding:12px 14px}
+.med{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:8px 0;border-bottom:1px dashed var(--line)}
+.med:last-child{border-bottom:none}
+.med-name{font-weight:700;color:var(--cinnabar);font-size:14px;flex:0 0 auto}
+.med-when{font-size:13px;color:#4a4438;flex:1;min-width:140px}
+.med-cau{font-size:11.5px;color:var(--gold);flex-basis:100%;line-height:1.5}
+.med-note{font-size:11.5px;color:var(--ink-2);line-height:1.6;margin-top:8px}
+/* AI 解读对话 */
+.aicard{border:1px solid var(--jade);border-radius:14px;background:var(--paper-2);padding:14px 16px;margin-top:18px}
+.aicard h2{margin:0 0 10px;font-size:17px;display:flex;align-items:center;gap:8px}
+.aicard h2 .n{display:inline-flex;width:26px;height:26px;border-radius:8px;background:var(--jade);color:#fff;align-items:center;justify-content:center;font-size:14px}
+.ai-sum{background:var(--jade-l);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#2c4a44;white-space:pre-wrap;line-height:1.7;max-height:200px;overflow:auto;margin-bottom:10px}
+.ai-log{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto;margin-bottom:8px}
+.ai-msg{font-size:13.5px;line-height:1.75;padding:10px 12px;border-radius:10px;white-space:pre-wrap;word-break:break-word}
+.ai-msg.user{align-self:flex-end;background:var(--jade);color:#fff;max-width:85%}
+.ai-msg.bot{align-self:flex-start;background:#fff;border:1px solid var(--line);max-width:94%}
+.ai-msg.bot b{color:var(--cinnabar)}
+.ai-input{display:flex;gap:8px;margin-top:4px;align-items:center}
+.ai-input input[type=text]{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;background:#fff;color:var(--ink)}
+.ai-input button{flex:0 0 auto}
+.ai-attach{font-size:20px;background:#fff;border:1px solid var(--line);border-radius:10px;width:42px;height:42px;cursor:pointer;line-height:1}
+.ai-imgs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.ai-chip{position:relative;display:inline-flex}
+.ai-chip img{width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.ai-chip .x{position:absolute;top:-6px;right:-6px;width:18px;height:18px;line-height:16px;text-align:center;border-radius:50%;background:var(--cinnabar);color:#fff;font-size:12px;cursor:pointer}
+.ai-set{border-top:1px dashed var(--line);margin-top:12px;padding-top:10px;font-size:12px;color:var(--ink-2)}
+.ai-set .row{display:flex;gap:8px;margin:6px 0;align-items:center}
+.ai-set label{flex:0 0 70px}
+.ai-set input{flex:1;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;background:#fff;color:var(--ink)}
+.ai-set .hint{font-size:11.5px;color:var(--ink-2);line-height:1.6}
+.ai-toggle{font-size:12.5px;color:var(--jade);cursor:pointer;user-select:none;margin-top:4px;display:inline-block}
+.ai-disclaimer{font-size:11.5px;color:var(--ink-2);margin-top:8px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -455,9 +494,118 @@ const REDFLAGS = {
 };
 
 /* =========================================================
+   數據：按體質推薦的外治方法與中成藥
+   （傳統中醫體質調理經驗整理，僅供養生參考）
+   ========================================================= */
+const CONSTITUTION = {
+  '平和質':{
+    therapy:[
+      {name:'保健按摩',icon:'🤲',how:'每日按揉合谷、足三里、湧泉各 1–2 分鐘，疏通氣血、強身防病。',cau:'平和質以保養為主，手法宜輕，不需強烈刺激。'},
+      {name:'溫和刮痧',icon:'🪥',how:'每周 1 次沿肩頸、背部膀胱經輕刮，出微紅即可。',cau:'不必強求出痧；皮膚破損、空腹、酒後不宜。'},
+      {name:'溫水泡腳',icon:'🦶',how:'每晚約 40℃ 溫水泡腳 15 分鐘，引血下行、助眠。',cau:'水溫勿過高、時間勿過長；糖尿病者注意防燙。'}
+    ],
+    medicine:[
+      ['玉屏風顆粒','平素易出汗、怕風者可作日常防護。','中成藥須在藥師或醫師指導下使用；感冒發熱期間停用。']
+    ],
+    medNote:'平和質一般不需服藥，保持規律作息、均衡飲食、適度運動即可。'
+  },
+  '氣虛質':{
+    therapy:[
+      {name:'補氣按摩',icon:'🤲',how:'按揉足足三里、氣海、關元各 2–3 分鐘，溫補脾肺之氣。',cau:'手法輕緩，避免飯後即刻；忌大汗耗氣。'},
+      {name:'艾灸',icon:'🔥',how:'溫和灸足三里、氣海、神闕，每穴 10–15 分鐘，每周 3–4 次，溫陽補氣。',cau:'防燙傷；陰虛火旺、實熱證、高熱者不宜灸。'},
+      {name:'藥線點灸',icon:'🧵',how:'壯醫藥線點灸足三里、氣海，每穴 1–2 壯（需專業人士操作）。',cau:'有創操作，皮膚感染、過敏體質慎用，建議由中醫師施術。'},
+      {name:'閃罐',icon:'🔵',how:'背部膀胱經閃罐（吸上即拔）以振奮陽氣，不宜留罐過久。',cau:'氣虛者皮膚薄、易出瘀，留罐宜短（5–8 分鐘）；凝血差者不宜。'}
+    ],
+    medicine:[
+      ['補中益氣丸','神疲乏力、氣短懶言、臟器下垂傾向者。','感冒發熱、陰虛內熱者忌用；高血壓者遵醫囑。'],
+      ['玉屏風顆粒','表虛自汗、易感冒者。','實熱證不宜；糖尿者看輔料。'],
+      ['人參健脾丸','食欲不振、便溏乏力者。','感冒期間停用；糖尿者看輔料。']
+    ]
+  },
+  '血瘀質':{
+    therapy:[
+      {name:'活血按摩',icon:'🤲',how:'拍掌、搓手至發熱，十指從根到尖拔伸，按揉內關、血海，促進末梢循環。',cau:'有出血傾向、服抗凝藥者力度宜輕。'},
+      {name:'刮痧',icon:'🪥',how:'沿心包經、背部膀胱經刮痧，以出痧活血通絡。',cau:'刮後 3–4 小時避風；孕婦腰腹、出血性疾病、經期腹部不宜。'},
+      {name:'走罐',icon:'🔵',how:'背部塗介質後走罐，活血化瘀、改善循環。',cau:'皮膚薄嫩、凝血差者慎用；同一部位勿反覆強刮。'},
+      {name:'溫通艾灸',icon:'🔥',how:'灸血海、三陰交溫經活血。',cau:'熱象明顯（紅腫熱痛）者不宜；防燙傷。'}
+    ],
+    medicine:[
+      ['血府逐瘀膠囊/丸','固定刺痛、唇甲暗、女子經血有塊等血瘀表現。','孕婦禁用；有出血史、服抗凝藥者慎用；飯後服。'],
+      ['複方丹參片','胸悶、循環不暢者。','孕婦慎用；不宜與抗凝血藥同用；胃不適者飯後服。'],
+      ['三七通舒膠囊','血瘀兼循環障礙者。','出血性疾病、經期、孕婦禁用；遵醫囑。']
+    ]
+  },
+  '濕熱質':{
+    therapy:[
+      {name:'清熱利濕刮痧',icon:'🪥',how:'沿膀胱經、膽經刮痧，清利濕熱。',cau:'濕熱易耗津，刮後多飲水、避風寒；體虛者輕刮。'},
+      {name:'留罐',icon:'🔵',how:'背部膀胱經留罐 8–10 分鐘，助排濕。',cau:'留罐不宜久，皮膚起疱即停；高熱、皮膚破損不宜。'},
+      {name:'健脾按摩',icon:'🤲',how:'按揉陰陵泉、豐隆、三陰交健脾祛濕。',cau:'飲食配合清淡，效果更佳。'},
+      {name:'艾灸（慎）',icon:'🔥',how:'濕熱證以清利為主，少灸；若配灸宜選陰陵泉、足三里短時。',cau:'實熱證、陰虛火旺明顯者不宜灸，恐助熱。'}
+    ],
+    medicine:[
+      ['龍膽瀉肝丸','口苦口乾、脅脹、小便黃赤、帶下黃稠等肝膽濕熱。','脾胃虛寒者、孕婦慎用；苦寒傷胃，中病即止，不宜久服。'],
+      ['二妙丸','下肢沈重、帶下黃、小便黃之濕熱下注。','陰虛者慎用。'],
+      ['茵梔黃顆粒','濕熱發黃、小便黃赤者。','脾胃虛寒、便溏者慎用；遵醫囑。']
+    ]
+  },
+  '痰濕質':{
+    therapy:[
+      {name:'健脾按摩',icon:'🤲',how:'順時針揉腹、按揉足足三里、豐隆、陰陵泉，健脾化濕。',cau:'飯後半小時內不宜重按腹部。'},
+      {name:'留罐/走罐',icon:'🔵',how:'背部膀胱經、脾俞胃俞留罐，化痰祛濕。',cau:'留罐時間適中；皮膚鬆弛、體弱者輕手法。'},
+      {name:'刮痧',icon:'🪥',how:'沿脾經、胃經輕刮，助運化。',cau:'痰濕兼氣虛者手法宜輕，不必強求出痧。'},
+      {name:'溫運艾灸',icon:'🔥',how:'灸中脘、足足三里、脾俞溫運脾胃。',cau:'痰濕熱象重（黃膩苔、煩熱）者少灸。'}
+    ],
+    medicine:[
+      ['參苓白術散','食少便溏、體倦乏力之脾虛夾濕。','感冒發熱時停；糖尿者看輔料。'],
+      ['二陳丸','胸悶痰多、噁心苔膩之痰濕。','陰虛、燥咳、熱痰黃稠者不宜。'],
+      ['香砂六君丸','腹脹、食欲不振、大便不成形。','陰虛內熱、實熱證不宜。']
+    ]
+  },
+  '氣鬱質':{
+    therapy:[
+      {name:'疏肝按摩',icon:'🤲',how:'按揉太沖、期門、膻中、內關，疏肝理氣、寬胸解鬱。',cau:'情緒舒暢配合最關鍵；手法以酸脹為度。'},
+      {name:'理氣刮痧',icon:'🪥',how:'沿脅肋、背部膀胱經輕刮，疏通氣機。',cau:'力度宜輕，避免強刺激致不適；皮膚薄者慎。'},
+      {name:'輕罐',icon:'🔵',how:'背部膀胱經閃罐或短時留罐，解鬱安神。',cau:'留罐宜短；體虛、凝血差者慎用。'},
+      {name:'溫通艾灸',icon:'🔥',how:'灸太沖、膻中、肝俞疏肝。',cau:'氣鬱化火（口苦、煩躁、舌紅）者少灸。'}
+    ],
+    medicine:[
+      ['逍遙丸','情志不舒、胸脅脹悶、月經不調。','陰虛火旺、實熱證不宜；經期量多者咨詢醫師。'],
+      ['加味逍遙丸（丹梔）','氣鬱化火、煩躁口乾者。','脾胃虛寒者慎用。'],
+      ['柴胡疏肝散（顆粒）','脘腹脹痛、情志抑鬱。','陰虛、肝陽上亢者慎用。']
+    ]
+  },
+  '陽虛質':{
+    therapy:[
+      {name:'溫陽艾灸',icon:'🔥',how:'灸關元、氣海、命門、腎俞、足足三里，每穴 10–15 分鐘，溫補腎陽。',cau:'防燙傷；實熱證、陰虛火旺、高熱者禁灸。'},
+      {name:'藥線點灸',icon:'🧵',how:'藥線點灸腎俞、關元（專業人士操作）。',cau:'有創，皮膚感染、過敏體質慎用。'},
+      {name:'溫經泡腳',icon:'🦶',how:'每晚 40℃ 左右溫水（可加生薑/艾葉）泡腳 15–20 分鐘，溫經散寒。',cau:'糖尿者測溫防燙；下肢靜脈曲張嚴重者咨詢醫師。'},
+      {name:'溫脾腎按摩',icon:'🤲',how:'搓腰腎區、按揉湧泉、足足三里，溫補脾腎。',cau:'手法溫熱緩和為宜。'}
+    ],
+    medicine:[
+      ['金匱腎氣丸','畏寒肢冷、腰膝酸軟、夜尿多之腎陽不足。','陰虛火旺、實熱證忌用；高血壓者遵醫囑。'],
+      ['右歸丸','陽虛較甚、精神不振、畏寒明顯者。','陰虛、濕熱者不宜。'],
+      ['桂附地黃丸','腰膝酸冷、小便不利或頻數。','陰虛內熱者忌用。']
+    ]
+  },
+  '陰虛內熱質':{
+    therapy:[
+      {name:'滋陰按摩',icon:'🤲',how:'按揉三陰交、太溪、照海、湧泉，滋腎養陰。',cau:'手法輕柔；忌大汗、忌辛燥。'},
+      {name:'輕刮痧',icon:'🪥',how:'沿腎經、脾經輕刮以清熱。',cau:'陰虛者皮膚幹、易傷，手法要輕、少出痧；不宜重刮。'},
+      {name:'艾灸（慎）',icon:'🔥',how:'陰虛本忌燥火，灸宜極少、短時，可選湧泉引火歸元。',cau:'明顯火旺（手足心熱、舌紅少苔）者不宜灸，恐傷陰。'},
+      {name:'輕閃罐',icon:'🔵',how:'背部膀胱經輕閃罐，不宜留罐久。',cau:'留罐易耗陰，時間宜短；體瘦陰虛者慎。'}
+    ],
+    medicine:[
+      ['六味地黃丸','腰膝酸軟、頭暈耳鳴、盜汗之肝腎陰虛。','陽虛、實熱、感冒者不宜；脾虛便溏慎用。'],
+      ['知柏地黃丸','陰虛火旺、口乾咽痛、潮熱盜汗。','虛寒、便溏者忌用。'],
+      ['杞菊地黃丸','陰虛兼目澀、視物昏花。','實熱、脾虛便溏慎用。']
+    ]
+  }
+};
+
+/* =========================================================
    狀態
    ========================================================= */
-const state = { photos:{A:null,B:null}, auto:{A:null,B:null}, camFor:null, stream:null };
+const state = { photos:{A:null,B:null}, auto:{A:null,B:null}, camFor:null, stream:null, reportText:'', aiImages:[] };
 
 // 本機 file:// 開啟時，提示自動分析可能被瀏覽器攔截
 if(!window.isSecureContext){
@@ -1000,6 +1148,24 @@ function generate(){
   });
   html += '</div>';
 
+  // 體質外治方法 + 中成藥（按體質推薦）
+  const conData = CONSTITUTION[con.n] || {therapy:[],medicine:[],medNote:''};
+  if(conData.therapy && conData.therapy.length){
+    html += '<h3 style="margin:18px 0 6px;font-size:16px">外治調理方法（按體質推薦）</h3><div class="therapy">';
+    html += conData.therapy.map(t=>'<div class="th-card"><div class="th-head"><span class="th-ico">'+t.icon+'</span><span>'+t.name+'</span></div>'
+        + '<div class="th-how">'+t.how+'</div>'
+        + '<div class="th-cau">⚠️ '+t.cau+'</div></div>').join('');
+    html += '</div>';
+  }
+  if(conData.medicine && conData.medicine.length){
+    html += '<h3 style="margin:18px 0 6px;font-size:16px">中成藥參考（按體質推薦）</h3><div class="meds">';
+    html += conData.medicine.map(m=>'<div class="med"><span class="med-name">'+m[0]+'</span>'
+        + '<span class="med-when">'+m[1]+'</span>'
+        + '<span class="med-cau">⚠️ '+m[2]+'</span></div>').join('');
+    html += '</div>';
+    html += '<div class="med-note">※ 上述中成藥為對應體質／證型的常見中成藥整理，<b>須在執業中醫師或藥師指導下使用</b>；孕婦、慢性病（高血壓、糖尿病、肝腎功能異常）患者、正在服用其他藥物者尤需謹慎，本推薦不替代醫師處方。'+(conData.medNote?(' '+conData.medNote):'')+'</div>';
+  }
+
   // 需要留意
   html += '<div class="redflag"><h4>需要留意 / 建議就醫</h4><ul>'
        +  REDFLAGS.base.map(t=>'<li>'+t+'</li>').join('')+'</ul></div>';
@@ -1012,10 +1178,164 @@ function generate(){
        +  '<button onclick="window.print()">列印 / 存為 PDF</button>'
        +  '<button class="ghost" onclick="resetAll()">重新自查</button></div>';
 
+  // AI 解讀對話（附於報告之後，直接可見；支持上傳圖片）
+  state.aiImages = [];
+  state.reportText = handSummary(con, five, overall);
+  html += '<div class="aicard"><h2><span class="n">智</span>AI 手診解讀助手</h2>'
+       +  '<div class="ai-sum" id="aiSum"></div>'
+       +  '<div class="ai-log" id="aiLog"></div>'
+       +  '<div class="ai-imgs" id="aiImgs"></div>'
+       +  '<div class="ai-input">'
+       +  '<button class="ai-attach" title="上傳圖片（手診照片/其他）" onclick="document.getElementById(\'aiFile\').click()">📎</button>'
+       +  '<input id="aiFile" type="file" accept="image/*" hidden onchange="aiAddImg(this)">'
+       +  '<input id="aiInput" type="text" placeholder="就這份報告提問，如：我的體質適合艾灸嗎？這些外治法先做哪個？" onkeydown="if(event.key===\'Enter\')aiSend()">'
+       +  '<button class="btn jade" id="aiSendBtn" onclick="aiSend()">發送</button></div>'
+       +  '<span class="ai-toggle" onclick="aiToggleSet()">⚙️ 配置 AI 接口（首次使用需填寫）</span>'
+       +  '<div class="ai-set" id="aiSet" style="display:none">'
+       +  '<div class="row"><label>接口地址</label><input id="aiBase" placeholder="https://api.openai.com/v1"></div>'
+       +  '<div class="row"><label>API Key</label><input id="aiKey" type="password" placeholder="sk-... 或您的密鑰"></div>'
+       +  '<div class="row"><label>模型</label><input id="aiModel" placeholder="gpt-4o（看圖需視覺模型）"></div>'
+       +  '<div class="hint">支持任意 OpenAI 兼容接口（留空默認 OpenAI）。密鑰僅保存在本機瀏覽器 localStorage，不會上傳。上傳圖片需使用支持視覺(vision)的模型（如 gpt-4o）；若接口不支持瀏覽器跨域(CORS)，請改用支持跨域的代理/網關地址。</div>'
+       +  '<div class="row"><button class="btn" onclick="aiSaveSet()">保存設置</button></div>'
+       +  '</div>'
+       +  '<div class="ai-disclaimer">🔒 本助手基於當前報告（及上傳圖片）給出通俗解釋與日常防護建議，<b>不構成醫療診斷</b>；涉及用藥或症狀請遵醫囑、及時就診。</div>'
+       +  '</div>';
+
   r.innerHTML = html;
   r.classList.add('show');
   markStep(2);
   r.scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(()=>aiInit(), 50);
+}
+
+function handSummary(con, five, overall){
+  const L=[];
+  L.push('【觀手知健康 · 手診報告摘要】');
+  L.push('體質辨識：'+con.n);
+  L.push('綜合評分：'+overall+' / 100');
+  L.push('五臟狀態：');
+  five.forEach(o=>{ L.push('  '+o.full+'：'+o.sc+' 分（'+o.lab+'）'); });
+  L.push('分區取色：');
+  ['A','B'].forEach(sk=>{
+    const a=state.auto[sk]; if(!a) return;
+    if(a.regions) L.push('  手掌：'+a.regions.map(rg=>rg.n+'→'+rg.label).join('；'));
+    else if(a.metrics) L.push('  指甲：'+a.metrics.map(m=>m.name+'='+m.val).join('；'));
+  });
+  const cd = CONSTITUTION[con.n];
+  if(cd){
+    L.push('推薦外治：'+cd.therapy.map(t=>t.name).join('、'));
+    L.push('參考中成藥：'+cd.medicine.map(m=>m[0]).join('、'));
+  }
+  L.push('※ 本報告僅供養生參考，不構成醫療診斷。');
+  return L.join('\n');
+}
+
+/* ---------- AI 解讀對話 ---------- */
+function aiSysPrompt(){
+  return '你是「觀手知健康」手診健康科普助手，依據中醫手診（蔡洪光《觀手知健康》經絡全息體系、田鵬霞《觀手知健康》九宮掌紋體系）與中醫體質學知識，用大白話幫用戶解讀手診報告。\n'
+    +'要求：\n'
+    +'1. 結合用戶提供的報告摘要與（如有）上傳的手部照片，解釋各項發現的通俗含義，不堆術語。\n'
+    +'2. 結合用戶體質，說明推薦的外治法（按摩/拔罐/艾灸/線灸/刮痧等）與中成藥如何選用、先做哪個、注意什麼；提醒中成藥須在醫師/藥師指導下使用。\n'
+    +'3. 給出日常養生、生活防護與防範建議（作息、飲食、運動等）。\n'
+    +'4. 若報告出現「建議就醫/異常信號」類提示，明確提醒及時到正規醫療機構就診。\n'
+    +'5. 始終強調：本工具僅供健康管理參考，不構成醫療診斷。\n'
+    +'6. 回答簡潔、有條理、口語化。';
+}
+function aiLoadSet(){
+  try{ return JSON.parse(localStorage.getItem('hand_ai_cfg')||'{}'); }catch(e){ return {}; }
+}
+function aiSaveSet(){
+  const cfg={base:document.getElementById('aiBase').value.trim(),
+             key:document.getElementById('aiKey').value.trim(),
+             model:document.getElementById('aiModel').value.trim()};
+  localStorage.setItem('hand_ai_cfg', JSON.stringify(cfg));
+  const el=document.createElement('div'); el.className='ai-msg bot'; el.style.fontSize='12px';
+  el.textContent='✅ 已保存 AI 接口設置（僅存本機瀏覽器）'; document.getElementById('aiLog').appendChild(el);
+}
+function aiToggleSet(){
+  const box=document.getElementById('aiSet');
+  box.style.display = box.style.display==='none'?'block':'none';
+  if(box.style.display==='block'){
+    const cfg=aiLoadSet();
+    if(cfg.base) document.getElementById('aiBase').value=cfg.base;
+    if(cfg.key) document.getElementById('aiKey').value=cfg.key;
+    if(cfg.model) document.getElementById('aiModel').value=cfg.model;
+  }
+}
+function aiAppend(role,text){
+  const log=document.getElementById('aiLog');
+  const el=document.createElement('div');
+  el.className='ai-msg '+(role==='user'?'user':'bot');
+  el.textContent=text; log.appendChild(el); log.scrollTop=log.scrollHeight;
+}
+function aiInit(){
+  const sum=state.reportText||'';
+  const sEl=document.getElementById('aiSum'); if(sEl) sEl.textContent=sum;
+  const log=document.getElementById('aiLog'); if(log) log.innerHTML='';
+  const cfg=aiLoadSet();
+  if(cfg.key){
+    aiAppend('bot','已就緒。報告要點已在上方。您可以直接就它提問，例如：\n· 我的體質適合艾灸嗎？\n· 這些外治法先做哪個好？\n· 哪些情況要去看醫生？\n· 可點 📎 上傳手部照片，讓我看圖說話。');
+  } else {
+    aiAppend('bot','（尚未配置 AI 接口，先給出自動解讀）\n\n'+sum+'\n\n⚙️ 點下方「配置 AI 接口」填入您的 API Key，即可就報告自由追問、看圖對話、獲取個性化防護建議。');
+  }
+}
+function renderAiImgs(){
+  const box=document.getElementById('aiImgs'); if(!box) return;
+  box.innerHTML='';
+  state.aiImages.forEach((u,i)=>{
+    const chip=document.createElement('span'); chip.className='ai-chip';
+    chip.innerHTML='<img src="'+u+'"><span class="x" onclick="aiDelImg('+i+')">×</span>';
+    box.appendChild(chip);
+  });
+}
+function aiAddImg(inp){
+  const files=inp.files; if(!files||!files.length) return;
+  Array.from(files).forEach(f=>{
+    if(!f.type.startsWith('image/')) return;
+    const r=new FileReader();
+    r.onload=()=>{ state.aiImages.push(r.result); renderAiImgs(); };
+    r.readAsDataURL(f);
+  });
+  inp.value='';
+}
+function aiDelImg(i){ state.aiImages.splice(i,1); renderAiImgs(); }
+async function aiSend(){
+  const input=document.getElementById('aiInput');
+  const q=(input.value||'').trim(); if(!q && state.aiImages.length===0) return;
+  const text = q || '（請看我上傳的圖片）';
+  input.value='';
+  aiAppend('user', text + (state.aiImages.length?('\n［已附 '+state.aiImages.length+' 張圖片］'):''));
+  const cfg=aiLoadSet(); const sum=state.reportText||'';
+  if(!cfg.key){
+    aiAppend('bot','如需針對此問題深入解答，請先點「配置 AI 接口」填入 API Key。\n以下為報告相關要點回顧：\n'+sum);
+    return;
+  }
+  const base=(cfg.base||'https://api.openai.com/v1').replace(/\/$/,'');
+  const model=cfg.model||'gpt-4o';
+  const btn=document.getElementById('aiSendBtn'); btn.disabled=true;
+  aiAppend('bot','正在思考…');
+  const userMsg={role:'user',content:[]};
+  userMsg.content.push({type:'text',text:'以下是本次手診報告摘要：\n'+sum+'\n\n用戶問題：'+text});
+  state.aiImages.forEach(d=>{ userMsg.content.push({type:'image_url',image_url:{url:d}}); });
+  try{
+    const resp=await fetch(base+'/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},
+      body:JSON.stringify({model:model,messages:[
+        {role:'system',content:aiSysPrompt()},
+        userMsg
+      ],temperature:0.6,max_tokens:1000})
+    });
+    const data=await resp.json();
+    document.querySelectorAll('.ai-log .ai-msg.bot').forEach(m=>{ if(m.textContent==='正在思考…') m.remove(); });
+    if(data.error) aiAppend('bot','⚠️ 接口返回錯誤：'+(data.error.message||JSON.stringify(data.error)));
+    else if(data.choices&&data.choices[0]) aiAppend('bot',data.choices[0].message.content.trim());
+    else aiAppend('bot','⚠️ 未獲得有效回覆：'+JSON.stringify(data).slice(0,200));
+  }catch(e){
+    document.querySelectorAll('.ai-log .ai-msg.bot').forEach(m=>{ if(m.textContent==='正在思考…') m.remove(); });
+    aiAppend('bot','⚠️ 調用失敗：'+e.message+'\n常見原因：接口地址不支持瀏覽器跨域(CORS)、密鑰無效或網絡受限。請改用支持跨域的網關地址，或在設置中核對。');
+  }
+  btn.disabled=false;
 }
 
 function reportText(){
@@ -1037,6 +1357,13 @@ function reportText(){
     const a = ADVICE[o.k];
     s += '\n【'+o.full+' · '+o.sc+' 分】'+a.sign+'\n  穴位：'+a.acu.map(x=>x[0]).join('、')+'\n  飲食：'+a.food+'\n  起居：'+a.life+'\n';
   });
+  const cd = CONSTITUTION[con.n];
+  if(cd){
+    s += '\n◆ 外治療法（'+con.n+'）\n';
+    cd.therapy.forEach(t=>{ s += '  · '+t.name+'：'+t.how+'（注意：'+t.cau+'）\n'; });
+    s += '\n◆ 參考中成藥（'+con.n+'，須遵醫師/藥師指導）\n';
+    cd.medicine.forEach(m=>{ s += '  · '+m[0]+'：'+m[1]+'\n'; });
+  }
   s += '\n※ 本報告僅供養生參考，不構成醫療診斷，不適請就醫。\n';
   return s;
 }
