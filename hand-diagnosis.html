@@ -277,6 +277,13 @@ textarea{width:100%;height:0;opacity:0;position:absolute;left:-9999px}
 .ai-set .hint{font-size:11.5px;color:var(--ink-2);line-height:1.6}
 .ai-toggle{font-size:12.5px;color:var(--jade);cursor:pointer;user-select:none;margin-top:4px;display:inline-block}
 .ai-disclaimer{font-size:11.5px;color:var(--ink-2);margin-top:8px;line-height:1.6}
+/* ROI 手動框選分析範圍 */
+.roi-box{border:1px solid var(--jade);border-radius:12px;background:var(--jade-l);padding:11px 13px;margin-bottom:10px}
+.roi-box h5{margin:0 0 8px;font-size:13.5px;color:var(--jade)}
+.roi-cv{display:block;width:100%;max-width:340px;margin:0 auto;border-radius:8px;touch-action:none;cursor:crosshair;border:1px solid var(--line)}
+.roi-tip{font-size:11.5px;color:var(--ink-2);line-height:1.6;margin:7px 0 2px}
+.roi-btns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.stab-note{font-size:11.5px;color:var(--ink-2);line-height:1.7;margin-top:8px;background:#f4efe3;border-radius:8px;padding:8px 11px}
 </style>
 </head>
 <body>
@@ -291,7 +298,7 @@ textarea{width:100%;height:0;opacity:0;position:absolute;left:-9999px}
 
 <div class="disclaimer">
   <b>聲明：</b>本頁為傳統中醫「手診」經驗的科普自查工具。拍照後由本頁即時做<b>圖像色彩與紋理的客觀量化</b>（自動分析掌色、青筋、掌紋對比等），比肉眼勾選更一致、偏差更小；
-  但自動分析受光線、白平衡、拍攝角度影響，<b>僅供輔助參考，不構成醫療診斷</b>，不能替代醫師面诊與現代醫學檢查（血常規、肝腎功能、心電圖、影像等）。
+  但自動分析受光線、白平衡、拍攝角度影響，<b>量化分數存在明顯不穩定性：同一張照片、相同框選範圍下重複分析分數一致，但不同光照 / 角度下分數可能大幅波動</b>，單次分數沒有絕對意義，僅適合長期多次測試觀察大體趨勢；體質定性標籤相對更穩定。<b>僅供輔助參考，不構成醫療診斷</b>，不能替代醫師面诊與現代醫學檢查（血常規、肝腎功能、心電圖、影像等）。
   手診屬傳統經驗總結，個體差異大，請勿據此自行用藥或停藥。<b>身體不適請及時就醫。</b>
   本頁所有照片與分析<b>只在您的設備本地處理</b>，不會上傳任何服務器。
 </div>
@@ -304,7 +311,7 @@ textarea{width:100%;height:0;opacity:0;position:absolute;left:-9999px}
 <!-- ================= STEP 1 ================= -->
 <section class="card" id="card1">
   <h2><span class="tag">STEP 1</span>拍下您的手（自動分析）</h2>
-  <p class="desc">在自然光下、掌心放鬆張開拍攝。可分別拍「手掌正面」與「指甲 / 手指」兩張。拍下後本頁會<b>自動分析</b>掌色、青筋密度、掌紋對比等指標，無須您逐項勾選。書中提醒：觀察宜「雙手對比」，與自己過去的手相比更有意義。</p>
+  <p class="desc">在自然光下、掌心放鬆張開拍攝。可分別拍「手掌正面」與「指甲 / 手指」兩張。拍下後本頁會先<b>自動框選手掌分析範圍</b>（可手動拖動虛線框修正，固定採樣範圍讓分數更穩定），再自動分析掌色、青筋密度、掌紋對比等指標，無須您逐項勾選。書中提醒：觀察宜「雙手對比」，與自己過去的手相比更有意義。</p>
 
   <div id="ctxWarn" class="ctx-warn" style="display:none">
     ⚠ 您正以「本機檔案」開啟，部分瀏覽器（如 Safari）會禁止讀取照片像素，導致自動分析無法執行。
@@ -605,7 +612,7 @@ const CONSTITUTION = {
 /* =========================================================
    狀態
    ========================================================= */
-const state = { photos:{A:null,B:null}, auto:{A:null,B:null}, camFor:null, stream:null, reportText:'', aiImages:[] };
+const state = { photos:{A:null,B:null}, auto:{A:null,B:null}, roi:{A:null,B:null}, camFor:null, stream:null, reportText:'', aiImages:[] };
 
 // 本機 file:// 開啟時，提示自動分析可能被瀏覽器攔截
 if(!window.isSecureContext){
@@ -673,6 +680,7 @@ document.getElementById('camIn').addEventListener('change', e=>{
 });
 function setPhoto(slot, dataURL){
   state.photos[slot] = dataURL;
+  state.roi[slot] = null;   // 換新照片後需重新框選分析範圍
   const box = document.getElementById('slot'+slot);
   const empty = document.getElementById('empty'+slot);
   if(empty) empty.style.display = 'none';
@@ -691,6 +699,7 @@ function setPhoto(slot, dataURL){
 function clearPhoto(slot){
   state.photos[slot] = null;
   state.auto[slot] = null;
+  state.roi[slot] = null;
   const box = document.getElementById('slot'+slot);
   const img = box.querySelector('img'); if(img) img.remove();
   const empty = document.getElementById('empty'+slot); if(empty) empty.style.display='';
@@ -761,59 +770,92 @@ const REGIONS = [
   {id:'pinky', n:'小指根（腎區）', organ:'腎·膀胱·生殖', fx:0.66,fy:0.28,fw:0.12,fh:0.13, w:{kidney:3,qi:1}},
   {id:'tip', n:'十指指尖（色澤·氣血）', organ:'氣血·末梢', fx:0.28,fy:0.04,fw:0.46,fh:0.16, w:{qi:1}}
 ];
-function analyzeRegions(d,TW,TH){
+/* ---- 穩定性優化 ③：固定 HSV/HSL 顏色判定閾值（不再依賴全圖動態均值）---- */
+function fixedJudge(mr,mg,mb){
+  const hsl=rgb2hsl(mr,mg,mb), h=hsl[0],s=hsl[1],l=hsl[2];
+  const red    = ((h<18||h>=342)&&s>0.45) ? clamp((s-0.45)/0.25,0,1) : 0;
+  const yellow = (h>=30&&h<68&&s>0.42)    ? clamp((s-0.42)/0.28,0,1) : 0;
+  const cyan   = (h>=150&&h<290&&s>0.12)  ? clamp((s-0.12)/0.28,0,1) : 0;
+  const white  = (l>0.72&&s<0.15)         ? clamp((l-0.72)/0.20,0,1) : 0;
+  const dark   = (l<0.30)                 ? clamp((0.30-l)/0.18,0,1) : 0;
+  const cand=[['purple',cyan],['red',red],['white',white],['yellow',yellow],['dark',dark]];
+  cand.sort((a,b)=>b[1]-a[1]);
+  const map={purple:['偏青紫（血瘀/寒）','#6b5b95'],red:['偏紅（內熱/血熱）','#b23a2f'],
+             white:['偏白（氣血不足）','#e8e2d2'],yellow:['偏黃（脾胃/肝膽）','#b8902c'],dark:['偏暗（瘀滯/正虛）','#5b5247']};
+  if(cand[0][1]>0.18) return {type:cand[0][0],sev:cand[0][1],label:map[cand[0][0]][0],dot:map[cand[0][0]][1],red,white,yellow,cyan,dark};
+  return {type:null,sev:0,label:'正常',dot:'#9bbf93',red,white,yellow,cyan,dark};
+}
+/* ---- 穩定性優化 ④：同一張圖固定做 3 次（取樣網格錯開）分析後取平均 ---- */
+const PASSES=[[0,0],[1,0],[0,1]];
+/* ---- 穩定性優化 ①：只在用戶框選（或自動建議）的手掌 ROI 內取樣 ---- */
+function analyzeRegions(d,TW,TH,roi){
+  const R=roi||{x:0,y:0,w:1,h:1};
   const step=2;
-  const all=[];
-  for(let y=0;y<TH;y+=step) for(let x=0;x<TW;x+=step){
-    const i=(y*TW+x)*4, a=d[i+3]; if(a<200) continue;
-    const r=d[i],g=d[i+1],b=d[i+2];
-    if(!isSkin(r,g,b)) continue;
-    all.push([r,g,b,0.299*r+0.587*g+0.114*b]);
+  const x0=Math.max(0,Math.floor(R.x*TW)), y0=Math.max(0,Math.floor(R.y*TH));
+  const x1=Math.min(TW,Math.ceil((R.x+R.w)*TW)), y1=Math.min(TH,Math.ceil((R.y+R.h)*TH));
+  if(x1-x0<40||y1-y0<40) return null;
+  const agg={}; for(const g of REGIONS) agg[g.id]={r:0,g:0,b:0,l:0,n:0,vein:0};
+  let br=0,bg=0,bb=0,bl=0,allN=0;
+  for(const [ox,oy] of PASSES){
+    for(const g of REGIONS){
+      const A=agg[g.id];
+      const gx0=Math.max(x0,Math.floor(g.fx*TW)), gy0=Math.max(y0,Math.floor(g.fy*TH));
+      const gx1=Math.min(x1,Math.ceil((g.fx+g.fw)*TW)), gy1=Math.min(y1,Math.ceil((g.fy+g.fh)*TH));
+      if(gx1<=gx0||gy1<=gy0) continue;
+      let sr=0,sg=0,sb=0,sl=0,n=0,vein=0;
+      for(let y=gy0+oy;y<gy1;y+=step) for(let x=gx0+ox;x<gx1;x+=step){
+        const i=(y*TW+x)*4; if(d[i+3]<200) continue;
+        const r=d[i],gg=d[i+1],b=d[i+2];
+        if(!isSkin(r,gg,b)) continue;
+        const l=0.299*r+0.587*gg+0.114*b;
+        sr+=r;sg+=gg;sb+=b;sl+=l;n++;
+        // 青筋：固定閾值（偏藍、偏暗），不再與全圖均值動態對比
+        if((b-r)>6 && l<120 && (b/gg)>1.04) vein++;
+      }
+      if(n>=10){ A.r+=sr;A.g+=sg;A.b+=sb;A.l+=sl;A.n+=n;A.vein+=vein; }
+    }
+    for(let y=y0+oy;y<y1;y+=step) for(let x=x0+ox;x<x1;x+=step){
+      const i=(y*TW+x)*4; if(d[i+3]<200) continue;
+      const r=d[i],gg=d[i+1],b=d[i+2];
+      if(!isSkin(r,gg,b)) continue;
+      br+=r;bg+=gg;bb+=b;bl+=0.299*r+0.587*gg+0.114*b;allN++;
+    }
   }
-  if(all.length<200) return null;
-  let br=0,bg=0,bb=0,bl=0;
-  for(const p of all){ br+=p[0];bg+=p[1];bb+=p[2];bl+=p[3]; }
-  br/=all.length;bg/=all.length;bb/=all.length;bl/=all.length;
+  if(allN<200) return null;
+  const base={r:Math.round(br/allN),g:Math.round(bg/allN),b:Math.round(bb/allN),l:Math.round(bl/allN)};
   const regions=[];
-  for(const R of REGIONS){
-    const x0=Math.floor(R.fx*TW), y0=Math.floor(R.fy*TH);
-    const x1=Math.min(TW,Math.floor((R.fx+R.fw)*TW)), y1=Math.min(TH,Math.floor((R.fy+R.fh)*TH));
-    if(x1<=x0||y1<=y0) continue;
-    let sr=0,sg=0,sb=0,sl=0,n=0,vein=0;
-    for(let y=y0;y<y1;y+=step) for(let x=x0;x<x1;x+=step){
-      const i=(y*TW+x)*4, a=d[i+3]; if(a<200) continue;
-      const r=d[i],g=d[i+1],b=d[i+2];
-      if(!isSkin(r,g,b)) continue;
-      const l=0.299*r+0.587*g+0.114*b;
-      sr+=r;sg+=g;sb+=b;sl+=l;n++;
-      if(b>r && (b-r)>5 && l<bl*0.95 && (b/g)>1.02) vein++;
-    }
-    if(n<20) continue;
-    const mr=sr/n,mg=sg/n,mb=sb/n,ml=sl/n;
-    const dR=mr-br,dG=mg-bg,dB=mb-bb,dL=ml-bl;
-    const red=clamp((dR-dG)/40,0,1);
-    const white=clamp(dL/45,0,1);
-    const yellow=clamp(((dR+dG)/2-dB)/50,0,1);
-    const cyan=clamp((dB-dR)/40,0,1);
-    const dark=clamp((-dL)/38,0,1);
-    const veinPct=vein/n;
-    const cand=[['purple',cyan],['red',red],['white',white],['yellow',yellow],['dark',dark]];
-    cand.sort((a,b)=>b[1]-a[1]);
-    let type=null,sev=0,label='正常',dot='#9bbf93';
-    if(cand[0][1]>0.16){
-      type=cand[0][0]; sev=cand[0][1];
-      const map={purple:['偏青紫（血瘀/寒）','#6b5b95'],red:['偏紅（內熱/血熱）','#b23a2f'],
-                 white:['偏白（氣血不足）','#e8e2d2'],yellow:['偏黃（脾胃/肝膽）','#b8902c'],dark:['偏暗（瘀滯/正虛）','#5b5247']};
-      label=map[type][0]; dot=map[type][1];
-    }
-    let veinTag = veinPct>0.04;
-    if(veinTag && label==='正常') label='青筋明顯（瘀堵）';
+  for(const g of REGIONS){
+    const A=agg[g.id]; if(A.n<30) continue;
+    const mr=A.r/A.n,mg=A.g/A.n,mb=A.b/A.n,ml=A.l/A.n;
+    const j=fixedJudge(mr,mg,mb);
+    const veinPct=A.vein/A.n;
+    let label=j.label,dot=j.dot,type=j.type,sev=j.sev;
+    const veinTag=veinPct>0.04;
+    if(veinTag&&label==='正常'){ label='青筋明顯（瘀堵）'; dot='#3b6b7a'; }
     else if(veinTag) label=label+'·青筋';
-    regions.push({id:R.id,n:R.n,organ:R.organ,w:R.w,
+    regions.push({id:g.id,n:g.n,organ:g.organ,w:g.w,
       mr:Math.round(mr),mg:Math.round(mg),mb:Math.round(mb),ml:Math.round(ml),
-      red,white,yellow,cyan,dark,vein:veinPct,label,dot,type,sev,veinTag});
+      red:j.red,white:j.white,yellow:j.yellow,cyan:j.cyan,dark:j.dark,
+      vein:veinPct,label,dot,type,sev,veinTag});
   }
-  return {regions, base:{r:Math.round(br),g:Math.round(bg),b:Math.round(bb),l:Math.round(bl)}, allN:all.length};
+  return regions.length?{regions,base,allN}:null;
+}
+/* 自動建議 ROI：皮膚像素包圍盒（僅作預填，用戶可拖動修正） */
+function suggestRoi(d,TW,TH){
+  let x0=TW,y0=TH,x1=0,y1=0,n=0;
+  const step=4;
+  for(let y=0;y<TH;y+=step) for(let x=0;x<TW;x+=step){
+    const i=(y*TW+x)*4; if(d[i+3]<200) continue;
+    if(!isSkin(d[i],d[i+1],d[i+2])) continue;
+    n++; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y;
+  }
+  const FALLBACK={x:0.12,y:0.06,w:0.76,h:0.88};
+  if(n<300) return FALLBACK;
+  const pad=0.02;
+  const rx=Math.max(0,x0/TW-pad), ry=Math.max(0,y0/TH-pad);
+  const rw=Math.min(1,x1/TW+pad)-rx, rh=Math.min(1,y1/TH+pad)-ry;
+  if(rw*rh>0.92) return FALLBACK;   // 幾乎全圖皆「膚色」→ 背景誤判，退回中央框
+  return {x:rx,y:ry,w:rw,h:rh};
 }
 function regionsToWeights(res){
   const w={heart:0,lung:0,spleen:0,liver:0,kidney:0,intestine:0,endocrine:0,qi:0,stasis:0,nerve:0};
@@ -837,9 +879,13 @@ function analyzePhoto(slot, dataURL){
   img.onerror = ()=>{ finish('<h4>自動圖像分析</h4><div class="loading">照片讀取失敗，請重新拍攝或從相冊選。</div>'); state.auto[slot]=null; };
   img.onload = ()=>{
     try{
-      const TW=340, TH=Math.max(1,Math.round(img.height*TW/img.width));
+      // 穩定性優化 ②：統一分析分辨率——固定 340×340 畫布、等比縮放置中，
+      // 消除不同照片長寬比/縮放插值帶來的色彩偏差
+      const TW=340, TH=340;
       const c=document.createElement('canvas'); c.width=TW; c.height=TH;
-      const ctx=c.getContext('2d',{willReadFrequently:true}); ctx.drawImage(img,0,0,TW,TH);
+      const ctx=c.getContext('2d',{willReadFrequently:true});
+      const sc=Math.min(TW/img.width, TH/img.height);
+      ctx.drawImage(img,(TW-img.width*sc)/2,(TH-img.height*sc)/2,img.width*sc,img.height*sc);
       let d;
       try{ d=ctx.getImageData(0,0,TW,TH).data; }
       catch(err){
@@ -851,20 +897,29 @@ function analyzePhoto(slot, dataURL){
           +'分析暫停期間，您稍後可重新拍攝。</div>');
         state.auto[slot]=null; return;
       }
-      // ===== 手掌：分區顏色分析（分析手各部位的顏色）=====
+      // ===== 手掌：框選範圍 + 分區顏色分析（分析手各部位的顏色）=====
       if(slot==='A'){
-        const res = analyzeRegions(d,TW,TH);
-        if(!res){
-          finish('<h4>自動圖像分析（手掌）</h4><div class="loading">未能識別到足夠的手部畫面，請在光線充足處重新拍攝、讓手部佔滿畫面；請在光線充足處重拍。</div>');
-          state.auto.A=null; return;
-        }
-        const weights = regionsToWeights(res);
-        const metrics = res.regions.map(rg=>({
-          name: rg.n, dot: rg.dot, val: rg.label,
-          sub: '像素均值 '+rg.mr+','+rg.mg+','+rg.mb + (rg.veinTag?(' ｜ 青筋≈'+Math.round(rg.vein*100)+'%'):'')
-        }));
-        state.auto.A = {regions:res.regions, base:res.base, metrics, weights, slot:'A'};
-        renderAutoPanel('A');
+        const panel=document.getElementById('autoPanel'+slot);
+        panel.innerHTML='<div class="loading">分析中，請稍候…</div>';
+        const sug=suggestRoi(d,TW,TH);
+        const runA=(roi)=>{
+          const res=analyzeRegions(d,TW,TH,roi);
+          if(!res){
+            document.getElementById('autoResA').innerHTML='<div class="loading">框選範圍內未能識別到足夠的手部畫面。<br>請拖動上方虛線框、只框住手掌後點「✓ 按此範圍重新分析」；或在光線充足處重拍、讓手部佔滿畫面。</div>';
+            state.auto.A=null; scheduleGenerate(); return;
+          }
+          state.roi.A=roi;
+          const weights=regionsToWeights(res);
+          const metrics=res.regions.map(rg=>({
+            name: rg.n, dot: rg.dot, val: rg.label,
+            sub: '像素均值 '+rg.mr+','+rg.mg+','+rg.mb + (rg.veinTag?(' ｜ 青筋≈'+Math.round(rg.vein*100)+'%'):'')
+          }));
+          state.auto.A={regions:res.regions, base:res.base, metrics, weights, slot:'A', roi};
+          renderAutoPanel('A');
+        };
+        panel.innerHTML='<div id="roiBoxA"></div><div id="autoResA"><div class="loading">分析中，請稍候…</div></div>';
+        runA(state.roi.A||sug);
+        renderRoiEditor('A', c, runA, sug);
         return;
       }
       // ===== 指甲：整圖顏色分析（保持原邏輯）=====
@@ -935,12 +990,52 @@ function analyzePhoto(slot, dataURL){
   // 解碼超時保護：避免卡在「分析中」
   setTimeout(()=>{ if(!done) finish('<h4>自動圖像分析</h4><div class="loading">照片解碼較慢或失敗，請重新拍攝 / 選擇。</div>'); }, 10000);
 }
+/* ROI 框選編輯器：在分析畫布上拖動畫框，只統計框內手掌 */
+function renderRoiEditor(slot, srcCanvas, runFn, suggested){
+  const host=document.getElementById('roiBox'+slot); if(!host) return;
+  host.className='roi-box noprint';
+  host.innerHTML='<h5>📐 框選分析範圍（手掌）</h5>'
+    +'<canvas class="roi-cv"></canvas>'
+    +'<div class="roi-tip">虛線框為自動建議範圍。若背景、陰影或衣袖被誤算進分數，請直接在圖上<b>拖出一個只蓋住手掌的新框</b>，再點「重新分析」。固定範圍後，同一張照片重複分析分數一致。</div>'
+    +'<div class="roi-btns">'
+    +'<button class="small" id="roiApply'+slot+'">✓ 按此範圍重新分析</button>'
+    +'<button class="small ghost" id="roiAuto'+slot+'">↺ 用自動建議範圍</button></div>';
+  const cv=host.querySelector('canvas');
+  cv.width=srcCanvas.width; cv.height=srcCanvas.height;
+  let rect=Object.assign({}, state.roi[slot]||suggested);
+  const draw=()=>{
+    const ctx=cv.getContext('2d');
+    ctx.drawImage(srcCanvas,0,0);
+    const W=cv.width,H=cv.height;
+    ctx.fillStyle='rgba(15,15,15,0.5)'; ctx.fillRect(0,0,W,H);
+    ctx.drawImage(srcCanvas, rect.x*W,rect.y*H,rect.w*W,rect.h*H, rect.x*W,rect.y*H,rect.w*W,rect.h*H);
+    ctx.strokeStyle='#2f6b5e'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+    ctx.strokeRect(rect.x*W,rect.y*H,rect.w*W,rect.h*H); ctx.setLineDash([]);
+  };
+  draw();
+  let drag=null;
+  const pos=e=>{ const r=cv.getBoundingClientRect();
+    return {x:clamp((e.clientX-r.left)/r.width,0,1), y:clamp((e.clientY-r.top)/r.height,0,1)}; };
+  cv.addEventListener('pointerdown',e=>{ drag={s:pos(e)}; try{cv.setPointerCapture(e.pointerId);}catch(_){} });
+  cv.addEventListener('pointermove',e=>{
+    if(!drag) return; const p=pos(e);
+    rect={x:Math.min(drag.s.x,p.x), y:Math.min(drag.s.y,p.y), w:Math.abs(p.x-drag.s.x), h:Math.abs(p.y-drag.s.y)};
+    if(rect.w>0.03&&rect.h>0.03) draw();
+  });
+  cv.addEventListener('pointerup',()=>{ drag=null; });
+  cv.addEventListener('pointerleave',()=>{ drag=null; });
+  host.querySelector('#roiApply'+slot).onclick=()=>{
+    if(rect.w<0.05||rect.h<0.05){ alert('請先在圖上拖出一個涵蓋手掌的方框。'); return; }
+    draw(); runFn(rect);
+  };
+  host.querySelector('#roiAuto'+slot).onclick=()=>{ rect=Object.assign({},suggested); draw(); runFn(suggested); };
+}
 function renderAutoPanel(slot){
   const a=state.auto[slot]; if(!a) return;
-  const panel=document.getElementById('autoPanel'+slot);
+  const host=document.getElementById('autoRes'+slot)||document.getElementById('autoPanel'+slot);
   let body='';
   if(a.regions){
-    body = '<div class="reg-note">下面按手的 9 個部位<b>分區取色</b>，與您手部平均膚色對比，標出偏紅 / 白 / 黃 / 青 / 暗或青筋明顯的部位——這就是「分析手各部分的顏色」。</div>'
+    body = '<div class="reg-note">下面按手的 9 個部位<b>分區取色</b>，用<b>固定色譜閾值</b>（HSV 區間）標出偏紅 / 白 / 黃 / 青 / 暗或青筋明顯的部位；每個部位由 3 次錯網格採樣取平均得出——這就是「分析手各部分的顏色」。</div>'
       + '<div class="regions">'
       + a.regions.map(rg=>
           '<div class="region"><span class="m-dot" style="background:'+rg.dot+'"></span>'
@@ -955,8 +1050,12 @@ function renderAutoPanel(slot){
         + '<span class="m-val">'+m.val+'</span><span class="m-sub">'+m.sub+'</span></div>').join('')
       + '</div>';
   }
-  panel.innerHTML='<h4>自動圖像分析'+(slot==='A'?'（手掌 · 分區顏色）':'（指甲）')+'</h4>'+body
-    + '<div class="auto-note">以上為照片各部位色彩與青筋的客觀量化（比肉眼判掌色更一致）。結果受光線、白平衡、拍攝角度影響，僅供輔助；結果僅供輔助參考。</div>';
+  const stab='<div class="stab-note"><b>算法穩定性說明：</b>本頁已做四項穩定性優化——① 手掌分析範圍可手動框選固定；② 統一 340×340 分析分辨率；③ 顏色判定採用固定 HSV 閾值；④ 同一張圖 3 次錯網格採樣取平均。'
+    +'同一張照片、同一框選範圍下重複分析分數一致；但<b>不同光照、白平衡、拍攝角度仍會使分數波動</b>，0–100 分單次沒有絕對意義，請重點看<b>體質定性標籤與長期多次測試的大體趨勢</b>，不要糾結單次數字高低。'
+    +'對比兩次拍照結果時，請保持相同光線、相同背景、相同拍攝距離與角度。</div>';
+  host.innerHTML='<h4>自動圖像分析'+(slot==='A'?'（手掌 · 分區顏色）':'（指甲）')+'</h4>'+body
+    + '<div class="auto-note">以上為照片各部位色彩與青筋的客觀量化（比肉眼判掌色更一致）。結果受光線、白平衡、拍攝角度影響，僅供輔助；結果僅供輔助參考。</div>'
+    + stab;
   scheduleGenerate();
 }
 function autoWeights(a){
@@ -1082,7 +1181,7 @@ function generate(){
          +  '<div class="or-lab">'+o.lab+'</div></div>';
   });
   html += '</div>';
-  html += '<p class="bars-note">分數由手部分區顏色信號換算：分數越高狀態越好，80 分以上為「狀態良好」、60–79 為「需要注意」、60 以下為「建議調理」。分數受光線與拍攝角度影響，僅供養生對照，不構成醫療診斷。</p>';
+  html += '<p class="bars-note">分數由手部分區顏色信號換算：分數越高狀態越好，80 分以上為「狀態良好」、60–79 為「需要注意」、60 以下為「建議調理」。<b>量化分數存在不穩定性：單次分數沒有絕對意義，僅適合長期多次測試觀察大體變化趨勢</b>；體質定性標籤相對更穩定。對比兩次結果請保持相同光線、背景與角度。僅供養生對照，不構成醫療診斷。</p>';
 
   // 其他系統觀察（僅列有信號者）
   const others = rank.filter(x=>OTHERS.includes(x.k) && x.v>0.2);
