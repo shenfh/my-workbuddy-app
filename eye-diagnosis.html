@@ -51,6 +51,26 @@ p.tips{font-size:13px;color:var(--ink2)}
 .btnrow{display:flex;gap:10px}.btnrow .btn{margin-top:10px}
 .intro-quote{border-left:3px solid var(--gold);padding:8px 12px;background:var(--paper2);border-radius:0 8px 8px 0;font-size:13px;color:var(--ink2);margin:8px 0}
 .src{font-size:12px;color:var(--ink2)}
+
+/* ---------- AI 解读对话 ---------- */
+.aicard{margin-top:6px;border:1.5px solid var(--jade);background:var(--paper2)}
+.aicard h2{color:var(--jade)}
+.ai-sum{font-size:13px;background:var(--jade-l);border-radius:8px;padding:10px 12px;line-height:1.7;white-space:pre-wrap}
+.ai-log{margin:12px 0;max-height:320px;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:2px}
+.ai-msg{font-size:13.5px;line-height:1.75;padding:10px 12px;border-radius:10px;white-space:pre-wrap;word-break:break-word}
+.ai-msg.user{align-self:flex-end;background:var(--jade);color:#fff;max-width:85%}
+.ai-msg.bot{align-self:flex-start;background:#fff;border:1px solid var(--line);max-width:92%}
+.ai-msg.bot b{color:var(--cinnabar2)}
+.ai-input{display:flex;gap:8px;margin-top:4px}
+.ai-input input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;background:#fff;color:var(--ink)}
+.ai-input button{flex:0 0 auto}
+.ai-set{border-top:1px dashed var(--line);margin-top:12px;padding-top:10px;font-size:12px;color:var(--ink2)}
+.ai-set .row{display:flex;gap:8px;margin:6px 0;align-items:center}
+.ai-set label{flex:0 0 78px}
+.ai-set input{flex:1;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;background:#fff;color:var(--ink)}
+.ai-set .hint{font-size:11.5px;color:var(--ink2);line-height:1.6}
+.ai-toggle{font-size:12.5px;color:var(--jade);cursor:pointer;user-select:none;margin-top:4px;display:inline-block}
+.ai-disclaimer{font-size:11.5px;color:var(--ink2);margin-top:8px;line-height:1.6}
 .big-actions{display:flex;gap:12px;margin-top:6px}
 .big-actions .btn{margin-top:0;padding:18px 8px;display:flex;flex-direction:column;gap:2px;align-items:center}
 .big-actions .btn .ic{font-size:26px}
@@ -922,8 +942,30 @@ function buildReport(res){
     <button class="btn" onclick="window.print()">📋 导出/保存报告</button>
   </div>`);
 
-  // 渲染后画叠加图
-  setTimeout(()=>drawOverlay(res),50);
+  /* AI 解读对话（附于报告之后，直接可见） */
+  parts.push(`<div class="card aicard"><h2><span class="n">智</span>AI 目诊解读助手</h2>
+    <div class="ai-sum" id="aiSum"></div>
+    <div class="ai-log" id="aiLog"></div>
+    <div class="ai-input">
+      <input id="aiInput" placeholder="就这份报告提问，如：这些血络说明什么？我该怎么调理？" onkeydown="if(event.key==='Enter')aiSend()">
+      <button class="btn jade" id="aiSendBtn" onclick="aiSend()">发送</button>
+    </div>
+    <span class="ai-toggle" onclick="aiToggleSet()">⚙️ 配置 AI 接口（首次使用需填写）</span>
+    <div class="ai-set" id="aiSet" style="display:none">
+      <div class="row"><label>接口地址</label><input id="aiBase" placeholder="https://api.openai.com/v1"></div>
+      <div class="row"><label>API Key</label><input id="aiKey" type="password" placeholder="sk-... 或您的密钥"></div>
+      <div class="row"><label>模型</label><input id="aiModel" placeholder="gpt-4o-mini"></div>
+      <div class="hint">支持任意 OpenAI 兼容接口（留空默认 OpenAI）。密钥仅保存在本机浏览器 localStorage，不会上传到本应用。若接口不支持浏览器跨域（CORS），请改用支持跨域的代理/网关地址。</div>
+      <div class="row"><button class="btn" onclick="aiSaveSet()">保存设置</button></div>
+    </div>
+    <div class="ai-disclaimer">🔒 本助手基于当前报告给出通俗解释与日常防护建议，<b>不构成医疗诊断</b>；涉及用药或症状请遵医嘱、及时就诊。</div>
+  </div>`);
+
+  // AI 报告上下文
+  state.reportText = aiSummary({eyeName,gloss,turbidName:turbid.name,turbidRatio,sclS,vesselCount:vessels.length,vessels,spotCount:spots.length,tags});
+
+  // 渲染后画叠加图 & 初始化 AI
+  setTimeout(()=>{ drawOverlay(res); aiInit(); },50);
   return parts.join("");
 }
 
@@ -940,6 +982,117 @@ function advice(tag){
     "瘀毒之象":"宜活血通络，可食山楂、桃仁（咨询医师）、丹参茶"
   };
   return map[tag]||"规律作息，清淡饮食，适度运动";
+}
+
+/* ---------- AI 解读对话 ---------- */
+function aiSummary(d){
+  const L=[];
+  L.push("【望目智诊报告摘要】");
+  L.push("眼别："+(d.eyeName||""));
+  L.push("白睛光泽："+(d.gloss||"").split("（")[0]);
+  L.push("混浊程度："+(d.turbidName||"")+"（黄浊占白睛 "+(d.turbidRatio*100).toFixed(1)+"%）");
+  L.push("白睛底色饱和度："+d.sclS.toFixed(2));
+  if(d.vesselCount>0){
+    const vs=d.vessels, big=vs.filter(v=>v.area>=30), m=big.length?big:vs;
+    const cg=m.map(colorGrade).sort((a,b)=>({"淡红":0,"鲜红":1,"殷红":2,"绛红":3}[a.name.slice(0,2)]??1));
+    const top=cg[cg.length-1];
+    const avgDist=m.reduce((s,v)=>s+v.dist,0)/m.length;
+    const avgBend=m.reduce((s,v)=>s+v.bend,0)/m.length;
+    L.push("显络条数："+vs.length);
+    L.push("络色分级："+top.name+"（"+top.mean+"）");
+    L.push("分布位置："+(avgDist<1.75?"近瞳，主火毒热毒":avgDist>2.55?"靠边，主寒湿/风寒":"居中"));
+    L.push("走行状态："+(avgBend>0.22?"纡曲明显，气血壅滞/痛证":"较平直"));
+    L.push("长度："+lenGrade(Math.max(...m.map(v=>v.len))).name);
+    L.push("宽度："+widthGrade(m.reduce((s,v)=>s+v.width,0)/m.length).name);
+  } else {
+    L.push("显络：未检出明显血络（无病或病轻之象）");
+  }
+  if(d.spotCount>0) L.push("斑点："+d.spotCount+" 处（详见报告分区）");
+  if(d.tags&&d.tags.length){ L.push("综合印象："); d.tags.forEach(t=>L.push("· "+t[1]+"："+t[2])); }
+  else L.push("综合印象：平和之象，未见明显异常目诊信号。");
+  return L.join("\n");
+}
+
+function aiSysPrompt(){
+  return `你是「望目智诊」健康科普助手，依据中医目诊（壮医目诊、王今觉《望目辨证诊断学》、李彤《观目诊病》）知识，用大白话帮用户解读眼诊报告。
+要求：
+1. 结合用户提供的报告摘要，解释各项发现的通俗含义，不堆术语。
+2. 给出日常养生、生活防护与防范建议（作息、饮食、用眼卫生等）。
+3. 若报告出现"建议就医/异常信号"类提示，明确提醒及时到正规医疗机构就诊。
+4. 始终强调：本工具仅供健康管理参考，不构成医疗诊断。
+5. 回答简洁、有条理、口语化，少用专业黑话。`;
+}
+
+function aiLoadSet(){
+  try{ return JSON.parse(localStorage.getItem("eye_ai_cfg")||"{}"); }catch(e){ return {}; }
+}
+function aiSaveSet(){
+  const cfg={base:document.getElementById("aiBase").value.trim(),
+             key:document.getElementById("aiKey").value.trim(),
+             model:document.getElementById("aiModel").value.trim()};
+  localStorage.setItem("eye_ai_cfg", JSON.stringify(cfg));
+  const el=document.createElement("div"); el.className="ai-msg bot"; el.style.fontSize="12px";
+  el.textContent="✅ 已保存 AI 接口设置（仅存本机浏览器）"; document.getElementById("aiLog").appendChild(el);
+}
+function aiToggleSet(){
+  const box=document.getElementById("aiSet");
+  box.style.display = box.style.display==="none"?"block":"none";
+  if(box.style.display==="block"){
+    const cfg=aiLoadSet();
+    if(cfg.base) document.getElementById("aiBase").value=cfg.base;
+    if(cfg.key) document.getElementById("aiKey").value=cfg.key;
+    if(cfg.model) document.getElementById("aiModel").value=cfg.model;
+  }
+}
+function aiAppend(role,text){
+  const log=document.getElementById("aiLog");
+  const el=document.createElement("div");
+  el.className="ai-msg "+(role==="user"?"user":"bot");
+  el.textContent=text; log.appendChild(el); log.scrollTop=log.scrollHeight;
+}
+function aiInit(){
+  const sum=state.reportText||"";
+  document.getElementById("aiSum").textContent=sum;
+  document.getElementById("aiLog").innerHTML="";
+  const cfg=aiLoadSet();
+  if(cfg.key){
+    aiAppend("bot","已就绪。报告要点已在上方。您可以直接就它提问，例如：\n· 这些血络颜色说明什么？\n· 我平时该怎么调理防护？\n· 哪些情况要去医院检查？");
+  } else {
+    aiAppend("bot","（尚未配置 AI 接口，先给出自动解读）\n\n"+sum+"\n\n⚙️ 点下方「配置 AI 接口」填入您的 API Key，即可就报告自由追问、获取个性化防护建议。");
+  }
+}
+async function aiSend(){
+  const input=document.getElementById("aiInput");
+  const q=input.value.trim(); if(!q) return;
+  input.value=""; aiAppend("user",q);
+  const cfg=aiLoadSet(); const sum=state.reportText||"";
+  if(!cfg.key){
+    aiAppend("bot","如需针对此问题深入解答，请先点「配置 AI 接口」填入 API Key。\n以下为报告相关要点回顾：\n"+sum);
+    return;
+  }
+  const base=(cfg.base||"https://api.openai.com/v1").replace(/\/$/,"");
+  const model=cfg.model||"gpt-4o-mini";
+  const btn=document.getElementById("aiSendBtn"); btn.disabled=true;
+  aiAppend("bot","正在思考…");
+  try{
+    const resp=await fetch(base+"/chat/completions",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+cfg.key},
+      body:JSON.stringify({model:model,messages:[
+        {role:"system",content:aiSysPrompt()},
+        {role:"user",content:"以下是本次望目智诊报告摘要：\n"+sum+"\n\n用户问题："+q}
+      ],temperature:0.6,max_tokens:900})
+    });
+    const data=await resp.json();
+    document.querySelectorAll(".ai-log .ai-msg.bot").forEach(m=>{ if(m.textContent==="正在思考…") m.remove(); });
+    if(data.error) aiAppend("bot","⚠️ 接口返回错误："+(data.error.message||JSON.stringify(data.error)));
+    else if(data.choices&&data.choices[0]) aiAppend("bot",data.choices[0].message.content.trim());
+    else aiAppend("bot","⚠️ 未获得有效回复："+JSON.stringify(data).slice(0,200));
+  }catch(e){
+    document.querySelectorAll(".ai-log .ai-msg.bot").forEach(m=>{ if(m.textContent==="正在思考…") m.remove(); });
+    aiAppend("bot","⚠️ 调用失败："+e.message+"\n常见原因：接口地址不支持浏览器跨域(CORS)、密钥无效或网络受限。请改用支持跨域的网关地址，或在设置中核对。");
+  }
+  btn.disabled=false;
 }
 
 /* ---------- 叠加可视化 ---------- */
