@@ -101,6 +101,19 @@ input[type=range]{accent-color:var(--jade);flex:1 1 120px;max-width:200px}
 .metric .m-val{flex:1;font-weight:700;color:var(--ink);min-width:0}
 .metric .m-sub{flex:0 0 auto;color:#8d8474;font-size:12px;white-space:nowrap}
 .auto-note{font-size:11.5px;color:#a29887;margin-top:8px;line-height:1.5}
+.reg-note{font-size:12px;color:var(--ink-2);background:var(--jade-l);border:1px solid #cfe2db;border-radius:8px;padding:8px 10px;margin-bottom:8px;line-height:1.5}
+.regions{display:flex;flex-direction:column;gap:6px}
+.region{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fdfbf6;font-size:13px}
+.region .m-dot{width:14px;height:14px;border-radius:50%;flex:0 0 14px;border:1px solid rgba(0,0,0,.12)}
+.region .r-name{flex:1 1 auto;font-weight:600;color:var(--ink)}
+.region .r-organ{flex:0 0 auto;font-size:11px;color:#9a8f78;max-width:40%}
+.region .r-val{flex:0 0 auto;font-size:12.5px;color:var(--jade);text-align:right}
+.wx-pick{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
+.wx-opt{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fbf8f1;cursor:pointer;flex:1 1 150px}
+.wx-opt.on{border-color:var(--jade);background:var(--jade-l)}
+.wx-opt input{display:none}
+.wx-opt span{font-weight:600;color:var(--ink)}
+.wx-opt small{font-size:11px;color:#9a8f78;line-height:1.4}
 
 /* ---------- palm map ---------- */
 .map-wrap{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
@@ -401,8 +414,15 @@ textarea{width:100%;height:0;opacity:0;position:absolute;left:-9999px}
 
 <!-- ================= STEP 4 ================= -->
 <section class="card" id="card3">
-  <h2><span class="tag">STEP 4</span>補充觀察（可選）</h2>
-  <p class="desc">自動分析已覆蓋掌色、青筋密度、掌紋對比等可量化的視覺特徵。以下為<b>圖像難以自動判別</b>的項目（手溫、半月痕數量與顏色、杵狀指、血痣、主觀感受等），您可按自身情況補充勾選；不勾選也能直接生成報告。</p>
+  <h2><span class="tag">STEP 4</span>形態與紋路觀察（可選，計入報告）</h2>
+  <p class="desc">照片能自動分析<b>手各部位的顏色與青筋</b>（見 STEP 1），但<b>掌形、手指形態、各種掌線</b>需要您照著自己的手勾選——這些會直接併入下方「各系統關注度」。照片拍不出來的項目（手溫、半月痕、杵狀指、血痣等）也可在此補充；不勾也能直接生成報告。</p>
+
+  <div class="morpho">
+    <h3 style="margin:6px 0 2px;font-size:15px">掌形（五行手型 · 單選，對應體質傾向）</h3>
+    <div id="palmPick" class="wx-pick"></div>
+    <h3 style="margin:14px 0 2px;font-size:15px">手指形態 · 掌紋線（按自身情況勾選）</h3>
+    <p class="qsub">下面「觀手指」「觀指甲」「觀半月痕」「觀手紋」等組即為手指形態與各種掌線的觀察項；勾選會直接影響報告關注度。</p>
+  </div>
   <div id="quiz"></div>
 </section>
 
@@ -729,7 +749,7 @@ const REDFLAGS = {
 /* =========================================================
    狀態
    ========================================================= */
-const state = { photos:{A:null,B:null}, auto:{A:null,B:null}, zones:new Set(), jg:new Set(), picks:new Set(), camFor:null, stream:null };
+const state = { photos:{A:null,B:null}, auto:{A:null,B:null}, zones:new Set(), jg:new Set(), picks:new Set(), palm:null, camFor:null, stream:null };
 
 // 本機 file:// 開啟時，提示自動分析可能被瀏覽器攔截
 if(!window.isSecureContext){
@@ -867,6 +887,90 @@ function rgb2hsl(r,g,b){
   }
   return [h,s,l];
 }
+/* =========================================================
+   手掌分區（用於「分析手各部分的顏色」）
+   坐標為照片像素的歸一化比例（fx,fy=取色框左上；fw,fh=大小）
+   假設照片為「掌心朝上、手指向上、右掌（拇指在左）」；
+   拍攝方向不同時，請在 STEP 2 手動標記反射區校正。
+   w = 該部位對應的系統權重（蔡洪光手指根全息思路）
+   ========================================================= */
+const REGIONS = [
+  {id:'thenar', n:'大魚際（拇指根隆起）', organ:'心肺·胸', fx:0.16,fy:0.50,fw:0.22,fh:0.22, w:{heart:2,lung:2,stasis:1}},
+  {id:'hypothenar', n:'小魚際（小指側掌肉）', organ:'腸·肺', fx:0.60,fy:0.52,fw:0.22,fh:0.22, w:{intestine:2,lung:1}},
+  {id:'center', n:'掌心（脾胃區·明堂）', organ:'脾胃·消化', fx:0.38,fy:0.42,fw:0.22,fh:0.20, w:{spleen:3,nerve:1}},
+  {id:'base', n:'掌根（下焦·腰腎）', organ:'腎·泌尿·生殖', fx:0.38,fy:0.74,fw:0.22,fh:0.16, w:{kidney:2,stasis:2,nerve:1}},
+  {id:'idx', n:'食指根（肺區）', organ:'肺·大腸', fx:0.32,fy:0.24,fw:0.12,fh:0.13, w:{lung:3,qi:1}},
+  {id:'mid', n:'中指根（心區）', organ:'心·腦', fx:0.44,fy:0.22,fw:0.12,fh:0.13, w:{heart:3,stasis:1}},
+  {id:'ring', n:'無名指根（肝區）', organ:'肝·膽·內分泌', fx:0.56,fy:0.24,fw:0.12,fh:0.13, w:{liver:3,endocrine:1}},
+  {id:'pinky', n:'小指根（腎區）', organ:'腎·膀胱·生殖', fx:0.66,fy:0.28,fw:0.12,fh:0.13, w:{kidney:3,qi:1}},
+  {id:'tip', n:'十指指尖（色澤·氣血）', organ:'氣血·末梢', fx:0.28,fy:0.04,fw:0.46,fh:0.16, w:{qi:1}}
+];
+function analyzeRegions(d,TW,TH){
+  const step=2;
+  const all=[];
+  for(let y=0;y<TH;y+=step) for(let x=0;x<TW;x+=step){
+    const i=(y*TW+x)*4, a=d[i+3]; if(a<200) continue;
+    const r=d[i],g=d[i+1],b=d[i+2];
+    if(!isSkin(r,g,b)) continue;
+    all.push([r,g,b,0.299*r+0.587*g+0.114*b]);
+  }
+  if(all.length<200) return null;
+  let br=0,bg=0,bb=0,bl=0;
+  for(const p of all){ br+=p[0];bg+=p[1];bb+=p[2];bl+=p[3]; }
+  br/=all.length;bg/=all.length;bb/=all.length;bl/=all.length;
+  const regions=[];
+  for(const R of REGIONS){
+    const x0=Math.floor(R.fx*TW), y0=Math.floor(R.fy*TH);
+    const x1=Math.min(TW,Math.floor((R.fx+R.fw)*TW)), y1=Math.min(TH,Math.floor((R.fy+R.fh)*TH));
+    if(x1<=x0||y1<=y0) continue;
+    let sr=0,sg=0,sb=0,sl=0,n=0,vein=0;
+    for(let y=y0;y<y1;y+=step) for(let x=x0;x<x1;x+=step){
+      const i=(y*TW+x)*4, a=d[i+3]; if(a<200) continue;
+      const r=d[i],g=d[i+1],b=d[i+2];
+      if(!isSkin(r,g,b)) continue;
+      const l=0.299*r+0.587*g+0.114*b;
+      sr+=r;sg+=g;sb+=b;sl+=l;n++;
+      if(b>r && (b-r)>5 && l<bl*0.95 && (b/g)>1.02) vein++;
+    }
+    if(n<20) continue;
+    const mr=sr/n,mg=sg/n,mb=sb/n,ml=sl/n;
+    const dR=mr-br,dG=mg-bg,dB=mb-bb,dL=ml-bl;
+    const red=clamp((dR-dG)/40,0,1);
+    const white=clamp(dL/45,0,1);
+    const yellow=clamp(((dR+dG)/2-dB)/50,0,1);
+    const cyan=clamp((dB-dR)/40,0,1);
+    const dark=clamp((-dL)/38,0,1);
+    const veinPct=vein/n;
+    const cand=[['purple',cyan],['red',red],['white',white],['yellow',yellow],['dark',dark]];
+    cand.sort((a,b)=>b[1]-a[1]);
+    let type=null,sev=0,label='正常',dot='#9bbf93';
+    if(cand[0][1]>0.16){
+      type=cand[0][0]; sev=cand[0][1];
+      const map={purple:['偏青紫（血瘀/寒）','#6b5b95'],red:['偏紅（內熱/血熱）','#b23a2f'],
+                 white:['偏白（氣血不足）','#e8e2d2'],yellow:['偏黃（脾胃/肝膽）','#b8902c'],dark:['偏暗（瘀滯/正虛）','#5b5247']};
+      label=map[type][0]; dot=map[type][1];
+    }
+    let veinTag = veinPct>0.04;
+    if(veinTag && label==='正常') label='青筋明顯（瘀堵）';
+    else if(veinTag) label=label+'·青筋';
+    regions.push({id:R.id,n:R.n,organ:R.organ,w:R.w,
+      mr:Math.round(mr),mg:Math.round(mg),mb:Math.round(mb),ml:Math.round(ml),
+      red,white,yellow,cyan,dark,vein:veinPct,label,dot,type,sev,veinTag});
+  }
+  return {regions, base:{r:Math.round(br),g:Math.round(bg),b:Math.round(bb),l:Math.round(bl)}, allN:all.length};
+}
+function regionsToWeights(res){
+  const w={heart:0,lung:0,spleen:0,liver:0,kidney:0,intestine:0,endocrine:0,qi:0,stasis:0,nerve:0};
+  if(!res) return w;
+  for(const rg of res.regions){
+    if(rg.type) for(const d in rg.w) if(w[d]!==undefined) w[d]+= rg.w[d]*rg.sev;
+    if(rg.veinTag){
+      w.stasis += rg.vein*45;
+      for(const d in rg.w) if(w[d]!==undefined) w[d]+= rg.w[d]*rg.vein*9;
+    }
+  }
+  return w;
+}
 function analyzePhoto(slot, dataURL){
   const panel = document.getElementById('autoPanel'+slot);
   panel.style.display='block';
@@ -891,6 +995,23 @@ function analyzePhoto(slot, dataURL){
           +'分析暫停期間，您仍可在 STEP 4 補充觀察並生成報告。</div>');
         state.auto[slot]=null; return;
       }
+      // ===== 手掌：分區顏色分析（分析手各部位的顏色）=====
+      if(slot==='A'){
+        const res = analyzeRegions(d,TW,TH);
+        if(!res){
+          finish('<h4>自動圖像分析（手掌）</h4><div class="loading">未能識別到足夠的手部畫面，請在光線充足處重新拍攝、讓手部佔滿畫面；您亦可於 STEP 2 手動標記反射區、STEP 4 補充觀察。</div>');
+          state.auto.A=null; return;
+        }
+        const weights = regionsToWeights(res);
+        const metrics = res.regions.map(rg=>({
+          name: rg.n, dot: rg.dot, val: rg.label,
+          sub: '像素均值 '+rg.mr+','+rg.mg+','+rg.mb + (rg.veinTag?(' ｜ 青筋≈'+Math.round(rg.vein*100)+'%'):'')
+        }));
+        state.auto.A = {regions:res.regions, base:res.base, metrics, weights, slot:'A'};
+        renderAutoPanel('A');
+        return;
+      }
+      // ===== 指甲：整圖顏色分析（保持原邏輯）=====
       const skin=[]; let n=0,sr=0,sg=0,sb=0,sl=0,ss=0;
       const all=[];  let na=0,asr=0,asg=0,asb=0,asl=0,ass=0;
       const step=2;
@@ -904,12 +1025,11 @@ function analyzePhoto(slot, dataURL){
           if(isSkin(r,g,b)){ skin.push({r,g,b,l,s:hsl[1]}); sr+=r;sg+=g;sb+=b;sl+=l;ss+=hsl[1]; n++; }
         }
       }
-      // 皮膚像素不足時，退回用全部不透明像素（手部佔比低 / 指甲照片也能量化）
       let pool=skin, pn=n, pr=sr,pg=sg,pb=sb, pl=sl, ps=ss;
       if(n<200 && na>=200){ pool=all; pn=na; pr=asr;pg=asg;pb=asb; pl=asl; ps=ass; }
       if(pn<200){
-        finish('<h4>自動圖像分析'+(slot==='A'?'（手掌）':'（指甲）')+'</h4><div class="loading">未能識別到足夠的手部畫面，請在光線充足處重新拍攝、讓手部佔滿畫面；您仍可於 STEP 4 補充觀察。</div>');
-        state.auto[slot]=null; return;
+        finish('<h4>自動圖像分析（指甲）</h4><div class="loading">未能識別到足夠的指甲畫面，請重拍或從相冊選；您亦可於 STEP 4 補充觀察。</div>');
+        state.auto.B=null; return;
       }
       const mR=pr/pn,mG=pg/pn,mB=pb/pn,mL=pl/pn,mS=ps/pn;
       let vein=0, sumDL=0;
@@ -934,23 +1054,22 @@ function analyzePhoto(slot, dataURL){
       const scores={red,yellow,white,purple,dark,even:1-even,vein:clamp(veinPct/35,0,1),texture};
 
       const hex='rgb('+Math.round(mR)+','+Math.round(mG)+','+Math.round(mB)+')';
-      let main='膚色正常 / 潤澤', mainDot=hex;
-      if(purple>0.3){ main='偏青紫（血瘀 / 寒）'; mainDot='#6b5b95'; }
-      else if(red>0.4){ main='偏紅（內熱 / 血熱）'; mainDot='#b23a2f'; }
-      else if(yellow>0.45){ main='偏黃（脾胃 / 肝膽）'; mainDot='#b8902c'; }
-      else if(white>0.45){ main='偏白（氣血不足）'; mainDot='#e8e2d2'; }
-      else if(dark>0.4){ main='晦暗無光（正氣不足）'; mainDot='#5b5247'; }
-      if(slot==='B') main='甲色：'+main;
+      let main='甲色正常 / 潤澤', mainDot=hex;
+      if(purple>0.3){ main='偏青紫（血瘀）'; mainDot='#6b5b95'; }
+      else if(red>0.4){ main='偏紅（充血 / 血熱）'; mainDot='#b23a2f'; }
+      else if(yellow>0.45){ main='偏黃（虛損）'; mainDot='#b8902c'; }
+      else if(white>0.45){ main='蒼白（氣血不足）'; mainDot='#e8e2d2'; }
+      else if(dark>0.4){ main='晦暗（正虛）'; mainDot='#5b5247'; }
 
       const metrics=[
-        {name: slot==='A'?'掌色主調':'甲色主調', dot:mainDot, val:main, sub:'均值 '+Math.round(mR)+','+Math.round(mG)+','+Math.round(mB)},
-        {name:'明度 / 光澤', dot:'#cfc6b0', val: mL>0.62?'潤澤偏亮':(dark>0.4?'偏暗（晦暗）':'適中'), sub:'L≈'+Math.round(mL)},
+        {name:'甲色主調', dot:mainDot, val:main, sub:'均值 '+Math.round(mR)+','+Math.round(mG)+','+Math.round(mB)},
+        {name:'明度 / 光澤', dot:'#cfc6b0', val: mL>0.62?'潤澤偏亮':(dark>0.4?'偏暗':'適中'), sub:'L≈'+Math.round(mL)},
         {name:'青筋密度', dot:'#3b6b7a', val: veinPct>18?'偏多':(veinPct>7?'少量':'少'), sub:'血管像素≈'+veinPct+'%'},
-        {name:'色澤均勻度', dot:'#9a8f78', val: even>0.6?'均勻':(even>0.3?'欠均勻':'局部明顯暗斑 / 三斑'), sub:'std≈'+Math.round(stdL)},
-        {name:'掌紋對比', dot:'#7a6f57', val: texture>0.55?'深（掌紋明顯）':(texture>0.3?'適中':'偏淺'), sub:'紋理強度≈'+Math.round(texture*100)}
+        {name:'色澤均勻度', dot:'#9a8f78', val: even>0.6?'均勻':(even>0.3?'欠均勻':'明顯暗斑'), sub:'std≈'+Math.round(stdL)},
+        {name:'紋理對比', dot:'#7a6f57', val: texture>0.55?'深':(texture>0.3?'適中':'偏淺'), sub:'紋理≈'+Math.round(texture*100)}
       ];
-      state.auto[slot]={metrics, scores};
-      renderAutoPanel(slot);
+      state.auto.B = {metrics, scores, slot:'B'};
+      renderAutoPanel('B');
     }catch(e){
       finish('<h4>自動圖像分析'+(slot==='A'?'（手掌）':'（指甲）')+'</h4><div class="loading">分析失敗（圖片格式或權限問題），您仍可於 STEP 4 補充觀察。</div>');
       state.auto[slot]=null;
@@ -963,19 +1082,33 @@ function analyzePhoto(slot, dataURL){
 function renderAutoPanel(slot){
   const a=state.auto[slot]; if(!a) return;
   const panel=document.getElementById('autoPanel'+slot);
-  panel.innerHTML='<h4>自動圖像分析'+(slot==='A'?'（手掌）':'（指甲）')+'</h4>'
-    + '<div class="metrics">'
-    + a.metrics.map(m=>'<div class="metric"><span class="m-name">'+m.name+'</span>'
+  let body='';
+  if(a.regions){
+    body = '<div class="reg-note">下面按手的 9 個部位<b>分區取色</b>，與您手部平均膚色對比，標出偏紅 / 白 / 黃 / 青 / 暗或青筋明顯的部位——這就是「分析手各部分的顏色」。</div>'
+      + '<div class="regions">'
+      + a.regions.map(rg=>
+          '<div class="region"><span class="m-dot" style="background:'+rg.dot+'"></span>'
+          + '<span class="r-name">'+rg.n+'</span>'
+          + '<span class="r-organ">'+rg.organ+'</span>'
+          + '<span class="r-val">'+rg.label+'</span></div>').join('')
+      + '</div>';
+  } else {
+    body = '<div class="metrics">'
+      + a.metrics.map(m=>'<div class="metric"><span class="m-name">'+m.name+'</span>'
         + '<span class="m-dot" style="background:'+m.dot+'"></span>'
         + '<span class="m-val">'+m.val+'</span><span class="m-sub">'+m.sub+'</span></div>').join('')
-    + '</div>'
-    + '<div class="auto-note">以上為照片色彩與紋理的客觀量化（比肉眼判斷掌色更一致）。結果受光線、白平衡、拍攝角度影響，僅供輔助；圖像難辨的項目可在 STEP 4 補充。</div>';
+      + '</div>';
+  }
+  panel.innerHTML='<h4>自動圖像分析'+(slot==='A'?'（手掌 · 分區顏色）':'（指甲）')+'</h4>'+body
+    + '<div class="auto-note">以上為照片各部位色彩與青筋的客觀量化（比肉眼判掌色更一致）。結果受光線、白平衡、拍攝角度影響，僅供輔助；拍攝方向不同可在 STEP 2 手動標記反射區校正。</div>';
   scheduleGenerate();
 }
 function autoWeights(a){
-  const w={heart:0,lung:0,spleen:0,liver:0,kidney:0,intestine:0,endocrine:0,qi:0,stasis:0,nerve:0};
-  if(!a||!a.scores) return w;
-  const s=a.scores;
+  const zero={heart:0,lung:0,spleen:0,liver:0,kidney:0,intestine:0,endocrine:0,qi:0,stasis:0,nerve:0};
+  if(!a) return zero;
+  if(a.weights) return a.weights;        // 手掌：分區顏色權重（由分析手各部位顏色得出）
+  if(!a.scores) return zero;              // 指甲：整圖分數權重
+  const s=a.scores, w=zero;
   w.heart     = s.red*1.5 + s.purple*1.4 + s.vein*1.1;
   w.endocrine = s.red*0.8 + s.yellow*0.8 + s.vein*0.5;
   w.spleen    = s.yellow*1.5;
@@ -1059,6 +1192,28 @@ document.getElementById('wuxingBox').innerHTML = WUXING.map(w=>
   '<div class="wx-card"><div class="wx-name">'+w.n+'</div><div class="wx-desc">'+w.d+'</div></div>'
 ).join('');
 
+// 掌形（五行）→ 系統權重映射（「掌形」屬手診形態觀察，計入報告）
+const WUXING_W = {
+  '金形手':{lung:2,intestine:1},
+  '木形手':{liver:2,nerve:2},
+  '水形手':{kidney:2,spleen:1},
+  '火形手':{heart:2,endocrine:1},
+  '土形手':{spleen:2,endocrine:1,nerve:1}
+};
+const palmPick = document.getElementById('palmPick');
+palmPick.innerHTML = WUXING.map(w=>
+  '<label class="wx-opt"><input type="radio" name="palm" value="'+w.n+'">'
+  + '<span>'+w.n+'</span><small>'+w.d+'</small></label>'
+).join('');
+palmPick.addEventListener('change', e=>{
+  if(e.target.name!=='palm') return;
+  state.palm = e.target.value || null;
+  palmPick.querySelectorAll('.wx-opt').forEach(l=>l.classList.remove('on'));
+  if(e.target.checked) e.target.closest('.wx-opt').classList.add('on');
+  markStep(4);
+  scheduleGenerate();
+});
+
 /* =========================================================
    STEP 3：問卷渲染（可選補充）
    ========================================================= */
@@ -1126,6 +1281,10 @@ function generate(){
     const w = JIUGONG[k].w || {};
     Object.keys(w).forEach(d=>{ if(W[d]!==undefined) W[d]+=w[d]; });
   });
+  if(state.palm && WUXING_W[state.palm]){
+    const pw=WUXING_W[state.palm];
+    Object.keys(pw).forEach(d=>{ if(W[d]!==undefined) W[d]+=pw[d]; });
+  }
   ['A','B'].forEach(sk=>{
     const aw = autoWeights(state.auto[sk]);
     Object.keys(aw).forEach(d=>{ if(W[d]!==undefined) W[d]+=aw[d]; });
@@ -1169,18 +1328,26 @@ function generate(){
 
   // 照片結合分析：連接語
   if(state.auto.A||state.auto.B){
-    html += '<div class="rp-bridge">上圖就是您剛拍的手。系統自動看了它的<b>顏色、青筋、紋路</b>，把每一項都量化成下面的數字——這比用肉眼看掌色更穩、偏差更小。結合您在 STEP 4 補充的觀察，就得出這份報告。</div>';
+    html += '<div class="rp-bridge">上圖就是您剛拍的手。系統自動把您的手掌切成 <b>9 個部位、逐區取色對比</b>（也就是「分析手各部分的顏色」），標出偏紅 / 白 / 黃 / 青 / 暗與青筋明顯的地方；再結合您在 STEP 4 填的<b>掌形、手指形態、各種掌紋</b>與其他補充觀察，合併成下面的「各系統關注度」。</div>';
   }
 
   // 自動圖像分析節
   ['A','B'].forEach(sk=>{
     const a=state.auto[sk]; if(!a) return;
-    html += '<h3 style="margin:18px 0 6px;font-size:16px">自動圖像分析 · '+(sk==='A'?'手掌':'指甲')+'</h3>'
-         +  '<div class="metrics" style="background:#fdfbf6;border:1px solid var(--line);border-radius:12px;padding:12px 14px">'
-         +  a.metrics.map(m=>'<div class="metric"><span class="m-name">'+m.name+'</span>'
-              + '<span class="m-dot" style="background:'+m.dot+'"></span>'
-              + '<span class="m-val">'+m.val+'</span><span class="m-sub">'+m.sub+'</span></div>').join('')
-         +  '</div>';
+    html += '<h3 style="margin:18px 0 6px;font-size:16px">自動圖像分析 · '+(sk==='A'?'手掌（分區顏色）':'指甲')+'</h3>';
+    if(a.regions){
+      html += '<div class="regions" style="background:#fdfbf6;border:1px solid var(--line);border-radius:12px;padding:12px 14px">'
+        + a.regions.map(rg=>'<div class="region"><span class="m-dot" style="background:'+rg.dot+'"></span>'
+            + '<span class="r-name">'+rg.n+'</span><span class="r-organ">'+rg.organ+'</span>'
+            + '<span class="r-val">'+rg.label+'</span></div>').join('')
+        + '</div>';
+    } else {
+      html += '<div class="metrics" style="background:#fdfbf6;border:1px solid var(--line);border-radius:12px;padding:12px 14px">'
+        + a.metrics.map(m=>'<div class="metric"><span class="m-name">'+m.name+'</span>'
+            + '<span class="m-dot" style="background:'+m.dot+'"></span>'
+            + '<span class="m-val">'+m.val+'</span><span class="m-sub">'+m.sub+'</span></div>').join('')
+        + '</div>';
+    }
   });
   if(state.auto.A||state.auto.B){
     html += '<div class="auto-note" style="margin:6px 0 0">上面的自動分析，是根據您照片的顏色和紋理客觀算出來的，權重已經併進下面的「系統關注度」裡。它受光線、拍攝角度影響，只作輔助參考。</div>';
@@ -1224,6 +1391,9 @@ function generate(){
   if(state.jg.size){
     html += '<h3 style="margin:20px 0 6px;font-size:16px">已選取的九宮（田鵬霞體系）</h3><div class="chips">'
          +  [...state.jg].map(k=>'<span class="chip">'+JIUGONG[k].n+'</span>').join('')+'</div>';
+  }
+  if(state.palm){
+    html += '<h3 style="margin:20px 0 6px;font-size:16px">已選掌形（五行手型 · STEP 4）</h3><div class="chips"><span class="chip">'+state.palm+'</span></div>';
   }
 
   // 紅旗
@@ -1279,6 +1449,9 @@ function reportText(){
   if(state.jg.size){
     s += '\n◆ 選取九宮（田鵬霞體系）\n'+[...state.jg].map(k=>'  '+JIUGONG[k].n+'（'+JIUGONG[k].organ+'）').join('\n')+'\n';
   }
+  if(state.palm){
+    s += '\n◆ 掌形（五行手型 · STEP 4）\n  '+state.palm+'\n';
+  }
   if(picked.length){
     s += '\n◆ 補充觀察記錄\n'+picked.map(p=>'  · '+p.opt.k+'（'+p.opt.d+'）').join('\n')+'\n';
   }
@@ -1297,11 +1470,13 @@ function copyReport(){
   t.style.height = '0';
 }
 function resetAll(){
-  state.zones.clear(); state.jg.clear(); state.picks.clear();
+  state.zones.clear(); state.jg.clear(); state.picks.clear(); state.palm=null;
   state.auto.A=null; state.auto.B=null;
   document.querySelectorAll('.zone').forEach(e=>e.classList.remove('on'));
   document.querySelectorAll('.jg').forEach(e=>e.classList.remove('on'));
   document.querySelectorAll('.opt input').forEach(i=>{ i.checked=false; i.closest('.opt').classList.remove('on'); });
+  document.querySelectorAll('#palmPick input').forEach(i=>{ i.checked=false; });
+  document.querySelectorAll('#palmPick .wx-opt').forEach(l=>l.classList.remove('on'));
   renderZones(); renderJG();
   clearPhoto('A'); clearPhoto('B');
   document.getElementById('report').classList.remove('show');
