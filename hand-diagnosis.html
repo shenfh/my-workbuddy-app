@@ -218,6 +218,26 @@ textarea{width:100%;height:0;opacity:0;position:absolute;left:-9999px}
   .card,.step{box-shadow:none}
   .noprint{display:none!important}
 }
+
+.con-grid{display:flex;gap:10px;flex-wrap:wrap;flex:1;min-width:200px}
+.con-card{flex:1;min-width:130px;border:1px solid var(--line);border-radius:14px;background:var(--paper-2);padding:12px 16px}
+.con-t{font-size:12.5px;color:var(--ink-2);margin-bottom:8px}
+.con-chip{display:inline-block;background:var(--jade-l);color:var(--jade);font-weight:700;border-radius:999px;padding:5px 16px;font-size:15px}
+.con-score{font-size:30px;font-weight:800;color:var(--cinnabar);line-height:1}
+.con-score small{font-size:13px;color:var(--ink-2);font-weight:400}
+.or-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.or-card{border:1px solid var(--line);border-radius:12px;background:var(--paper-2);padding:12px 14px}
+.or-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.or-name{font-weight:700;font-size:14.5px}
+.or-name .m-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.or-score{font-weight:800;font-size:17px}
+.or-track{height:6px;border-radius:4px;background:#ece3d2;overflow:hidden}
+.or-fill{display:block;height:100%;border-radius:4px;transition:width .6s ease}
+.or-lab{margin-top:7px;font-size:12px;color:var(--ink-2)}
+.dreport{border:1px solid var(--line);border-radius:12px;background:#fdfbf6;padding:14px 16px}
+.dsec h4{margin:10px 0 4px;color:var(--jade);font-size:14.5px}
+.dsec:first-child h4{margin-top:0}
+.dsec p,.dsec li{font-size:13.8px;margin:4px 0;color:#4a4438}
 </style>
 </head>
 <body>
@@ -239,10 +259,7 @@ textarea{width:100%;height:0;opacity:0;position:absolute;left:-9999px}
 
 <div class="steps">
   <div class="step" id="step1"><span class="no">1</span><span>拍照 · 自動分析</span></div>
-  <div class="step" id="step2"><span class="no">2</span><span>標記反射區（蔡洪光 · 可選）</span></div>
-  <div class="step" id="step3"><span class="no">3</span><span>掌紋九宮（田鵬霞 · 可選）</span></div>
-  <div class="step" id="step4"><span class="no">4</span><span>補充觀察（可選）</span></div>
-  <div class="step" id="step5"><span class="no">5</span><span>生成報告</span></div>
+  <div class="step" id="step2"><span class="no">2</span><span>手診報告（自動生成）</span></div>
 </div>
 
 <!-- ================= STEP 1 ================= -->
@@ -253,7 +270,7 @@ textarea{width:100%;height:0;opacity:0;position:absolute;left:-9999px}
   <div id="ctxWarn" class="ctx-warn" style="display:none">
     ⚠ 您正以「本機檔案」開啟，部分瀏覽器（如 Safari）會禁止讀取照片像素，導致自動分析無法執行。
     若拍完照後分析圖一直空白，請：① 試「從相冊選」選同一張圖；② 或在檔案所在資料夾執行
-    <code>python3 -m http.server 8000</code>，再用 <code>http://localhost:8000</code> 開啟。手動觀察（STEP 3）不受影響。
+    <code>python3 -m http.server 8000</code>，再用 <code>http://localhost:8000</code> 開啟。
   </div>
 
   <div class="photo-grid">
@@ -303,133 +320,10 @@ textarea{width:100%;height:0;opacity:0;position:absolute;left:-9999px}
   <input type="file" id="camIn" accept="image/*" capture="environment" style="display:none">
 </section>
 
-<!-- ================= STEP 2 ================= -->
-<section class="card" id="card2">
-  <h2><span class="tag">STEP 2</span>手掌全息反射區標記（可選）</h2>
-  <p class="desc">書中「手掌全息定位」把整隻手掌看成一個縮小的人體：指根在上對應頭頸，掌心對應消化與心肺，掌根對應下焦腎與生殖。自動分析已涵蓋整體掌色與青筋，如需標註「某個具體區域異常」，可點選下方圓圈（此步可略過）。</p>
-
-  <div class="map-wrap">
-    <div>
-      <svg class="palm" viewBox="0 0 320 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="手掌全息反射區示意圖">
-        <path d="M78,168 L250,168 C268,178 273,258 266,330 C261,372 250,394 230,400 L100,400 C79,394 66,372 62,330 C55,258 60,178 78,168 Z"
-              fill="#f6ece0" stroke="#c8b79b" stroke-width="2"/>
-        <rect x="86" y="52" width="38" height="140" rx="19" fill="#f6ece0" stroke="#c8b79b" stroke-width="2"/>
-        <rect x="126" y="34" width="40" height="156" rx="20" fill="#f6ece0" stroke="#c8b79b" stroke-width="2"/>
-        <rect x="168" y="54" width="38" height="138" rx="19" fill="#f6ece0" stroke="#c8b79b" stroke-width="2"/>
-        <rect x="208" y="82" width="33" height="108" rx="16" fill="#f6ece0" stroke="#c8b79b" stroke-width="2"/>
-        <rect x="18" y="196" width="36" height="104" rx="18" fill="#f6ece0" stroke="#c8b79b" stroke-width="2"
-              transform="rotate(-38 36 248)"/>
-        <path d="M70,300 C110,250 150,240 190,255" fill="none" stroke="#d8c6ab" stroke-width="2.5" stroke-linecap="round"/>
-        <path d="M75,235 C120,230 175,235 240,220" fill="none" stroke="#d8c6ab" stroke-width="2.5" stroke-linecap="round"/>
-        <path d="M92,120 C120,150 160,155 205,140" fill="none" stroke="#d8c6ab" stroke-width="2.5" stroke-linecap="round"/>
-        <g id="zones">
-          <circle class="zone" data-z="head"   cx="146" cy="150" r="17"></circle>
-          <circle class="zone" data-z="lung"   cx="105" cy="196" r="16"></circle>
-          <circle class="zone" data-z="heart"  cx="145" cy="196" r="16"></circle>
-          <circle class="zone" data-z="liver"  cx="186" cy="196" r="16"></circle>
-          <circle class="zone" data-z="kidney" cx="223" cy="202" r="15"></circle>
-          <circle class="zone" data-z="stom"   cx="152" cy="252" r="22"></circle>
-          <circle class="zone" data-z="intes"  cx="205" cy="262" r="18"></circle>
-          <circle class="zone" data-z="lungq"  cx="105" cy="262" r="20"></circle>
-          <circle class="zone" data-z="uro"    cx="165" cy="352" r="22"></circle>
-          <circle class="zone" data-z="nerve"  cx="126" cy="176" r="11"></circle>
-          <circle class="zone" data-z="liver2" cx="166" cy="176" r="11"></circle>
-        </g>
-        <g class="zlabel">
-          <text x="146" y="154">頭頸</text>
-          <text x="105" y="200">肺</text>
-          <text x="145" y="200">心</text>
-          <text x="186" y="200">肝膽</text>
-          <text x="223" y="206">腎</text>
-          <text x="152" y="256">脾胃</text>
-          <text x="205" y="266">腸</text>
-          <text x="105" y="266">心肺</text>
-          <text x="165" y="356">泌尿生殖</text>
-        </g>
-      </svg>
-      <p class="map-hint">示意圖：右手掌面（左手左右相反，臟腑對應相同）。點擊圓圈可反覆選取 / 取消。</p>
-    </div>
-    <div>
-      <div class="zone-list" id="zoneList">
-        <p class="map-hint">尚未標記區域。點左圖圓圈後，這裡會列出該反射區對應的臟腑與書中提示。</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= STEP 3 · 田鵬霞 ================= -->
-<section class="card" id="card3b">
-  <h2><span class="tag tian">STEP 3</span>掌紋九宮速查 · 田鵬霞《觀手知健康》（可選對照）</h2>
-  <p class="desc">田鵬霞的體系以「九宮分區 ＋ 掌紋輔線 ＋ 五行手型」為主，書中附 <b>600 餘幅圖</b>、強調看圖對照。下方九宮圖點擊宮位會列出對應臟腑與書中提示；掌紋輔線表則把書中 20 餘條紋路逐一說明。這些紋路需您對照自己的手人工辨認，系統不會自動識別（與蔡洪光的「手指根全息」互為補充）。</p>
-
-  <div class="map-wrap">
-    <div>
-      <svg class="palm palm9" viewBox="0 0 320 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="手掌九宮分區示意圖">
-        <path d="M78,168 L250,168 C268,178 273,258 266,330 C261,372 250,394 230,400 L100,400 C79,394 66,372 62,330 C55,258 60,178 78,168 Z"
-              fill="#f6ece0" stroke="#c8b79b" stroke-width="2"/>
-        <rect x="86" y="52" width="38" height="140" rx="19" fill="#f6ece0" stroke="#c8b79b" stroke-width="2"/>
-        <rect x="126" y="34" width="40" height="156" rx="20" fill="#f6ece0" stroke="#c8b79b" stroke-width="2"/>
-        <rect x="168" y="54" width="38" height="138" rx="19" fill="#f6ece0" stroke="#c8b79b" stroke-width="2"/>
-        <rect x="208" y="82" width="33" height="108" rx="16" fill="#f6ece0" stroke="#c8b79b" stroke-width="2"/>
-        <g id="jiugong">
-          <rect class="jg" data-jg="xun"  x="70"  y="175" width="60" height="80" rx="8"></rect>
-          <rect class="jg" data-jg="li"   x="130" y="175" width="65" height="80" rx="8"></rect>
-          <rect class="jg" data-jg="kun"  x="195" y="175" width="63" height="80" rx="8"></rect>
-          <rect class="jg" data-jg="zhen" x="70"  y="255" width="60" height="70" rx="8"></rect>
-          <rect class="jg" data-jg="ming" x="130" y="255" width="65" height="70" rx="8"></rect>
-          <rect class="jg" data-jg="dui"  x="195" y="255" width="63" height="70" rx="8"></rect>
-          <rect class="jg" data-jg="gen"  x="70"  y="325" width="60" height="73" rx="8"></rect>
-          <rect class="jg" data-jg="kan"  x="130" y="325" width="65" height="73" rx="8"></rect>
-          <rect class="jg" data-jg="qian" x="195" y="325" width="63" height="73" rx="8"></rect>
-        </g>
-        <g class="jglabel">
-          <text x="100" y="218">巽</text>
-          <text x="162" y="218">離</text>
-          <text x="226" y="218">坤</text>
-          <text x="100" y="294">震</text>
-          <text x="162" y="294">明堂</text>
-          <text x="226" y="294">兌</text>
-          <text x="100" y="366">艮</text>
-          <text x="162" y="366">坎</text>
-          <text x="226" y="366">乾</text>
-        </g>
-      </svg>
-      <p class="map-hint">示意圖：右手掌面九宮（以中指—無名指縫為縱軸，手指→掌根分上中下三焦）。點擊宮位可選取／取消。</p>
-    </div>
-    <div>
-      <div class="zone-list" id="jgList">
-        <p class="map-hint">尚未選取宮位。點左圖宮位後，這裡會列出對應臟腑與書中提示；選中的宮位會併入報告的「系統關注度」。</p>
-      </div>
-    </div>
-  </div>
-
-  <h3 class="sub">掌紋輔線速查（書中 20 餘條）</h3>
-  <p class="desc">以下為田鵬霞書中常見掌紋的口語化解讀，您可對照自己的手查看。紋路需人工辨認，自動分析不涵蓋。</p>
-  <div class="lines" id="linesBox"></div>
-
-  <h3 class="sub">五行手型（望形 · 體質傾向）</h3>
-  <p class="desc">田鵬霞書中按「金木水火土」歸納手形，僅供體質傾向參考。</p>
-  <div class="wuxing" id="wuxingBox"></div>
-</section>
-
-<!-- ================= STEP 4 ================= -->
-<section class="card" id="card3">
-  <h2><span class="tag">STEP 4</span>形態與紋路觀察（可選，計入報告）</h2>
-  <p class="desc">照片能自動分析<b>手各部位的顏色與青筋</b>（見 STEP 1），但<b>掌形、手指形態、各種掌線</b>需要您照著自己的手勾選——這些會直接併入下方「各系統關注度」。照片拍不出來的項目（手溫、半月痕、杵狀指、血痣等）也可在此補充；不勾也能直接生成報告。</p>
-
-  <div class="morpho">
-    <h3 style="margin:6px 0 2px;font-size:15px">掌形（五行手型 · 單選，對應體質傾向）</h3>
-    <div id="palmPick" class="wx-pick"></div>
-    <h3 style="margin:14px 0 2px;font-size:15px">手指形態 · 掌紋線（按自身情況勾選）</h3>
-    <p class="qsub">下面「觀手指」「觀指甲」「觀半月痕」「觀手紋」等組即為手指形態與各種掌線的觀察項；勾選會直接影響報告關注度。</p>
-  </div>
-  <div id="quiz"></div>
-</section>
-
 <!-- ================= STEP 5 ================= -->
 <section class="card" id="card4">
-  <h2><span class="tag">STEP 5</span>手診報告（自動生成）</h2>
-  <p class="desc">您完成拍照、標記反射區、選取九宮或補充勾選後，下方報告會<b>自動更新</b>，不必點按鈕。下方按鈕可隨時重新整理。</p>
+  <h2><span class="tag">STEP 2</span>手診報告（自動生成）</h2>
+  <p class="desc">拍照完成後，下方報告會<b>自動生成</b>：體質辨識、五臟狀態分析（0–100 分）、詳細診斷報告與調理建議。無需任何勾選。</p>
   <div class="gen-wrap">
     <button class="big-btn" onclick="generate();document.getElementById('report').scrollIntoView({behavior:'smooth',block:'start'})">重新整理報告</button>
   </div>
@@ -463,192 +357,6 @@ const DIMS = {
 
 /* =========================================================
    數據：手掌全息反射區
-   ========================================================= */
-const ZONES = {
-  head:{n:'指根 · 頭頸區',organ:'頭、頸、眼耳鼻喉',tip:'指根这块要是有暗斑、硬块，或者一按就疼，书里说多半是头颈、五官的循环不太好，常盯电脑、脖子肩膀僵硬的人最常见。',w:{heart:1,nerve:2,stasis:1}},
-  lung:{n:'食指根 · 肺區',organ:'肺、支氣管、大腸上段',tip:'食指根变细、发白或一按就疼，书里认为跟肺气不足、容易感冒咳嗽有关（原书也提到“食指根越按越疼——多半便秘”）。',w:{lung:3,qi:1}},
-  heart:{n:'中指根 · 心區',organ:'心、心包、腦',tip:'中指根出现红色暗斑、发青发紫或一按就疼，书里提示心脑血管负担偏重；发紫发暗多半是心血不通、供血不够。',w:{heart:3,stasis:1}},
-  liver:{n:'無名指根 · 肝膽區',organ:'肝、膽、三焦',tip:'无名指根皮肤不对劲、有硬块或发暗，书里提示肝胆功能和内分泌状态；指节粗大的人常见胆经不太通。',w:{liver:3,endocrine:1}},
-  kidney:{n:'小指根 · 腎區',organ:'腎、膀胱、生殖',tip:'小指根变细、瘦弱或发暗，书里看作是精力下降、肾气不足的信号，常腰酸、夜尿多的人多见。',w:{kidney:3,qi:1}},
-  stom:{n:'掌心 · 脾胃區',organ:'脾、胃、胰',tip:'掌心（含“健理三针区”）有硬块、压痛、老茧或凹坑，书里提示消化机能状态；掌心冰凉多是脾胃虚寒，掌心老出汗则提示胃比较紧张。',w:{spleen:3,nerve:1}},
-  intes:{n:'小魚際外側 · 腸區',organ:'大腸、小腸',tip:'这块皮肤粗糙、发暗或按着有颗粒感，书里提示肠道积堵、排便不顺畅；手指发紫也跟小肠机能有关。',w:{intestine:3,stasis:1}},
-  lungq:{n:'大魚際 · 心肺區',organ:'心、肺、胸',tip:'大鱼际凹进去多是心肺气虚，鼓得太高多是痰瘀化热（常见于血脂、血压偏高）；这里青筋明显，书里提示腰腿和下肢循环问题。',w:{heart:2,lung:2,stasis:1}},
-  uro:{n:'掌根 · 下焦區',organ:'腎、膀胱、生殖、腰腿',tip:'掌根和腕横纹附近青筋、发暗或压痛，书里提示泌尿生殖系统、腰部有积滞；掌根正中出现“人”字纹，常见于长期睡不好的人。',w:{kidney:2,stasis:2,nerve:1}},
-  nerve:{n:'食指與中指指縫間',organ:'植物神經、消化神經調節',tip:'书里说：“中食指之间皮肤——提醒你神经引起的内脏不适”，这里不对劲多半跟紧张、焦虑导致的肠胃紊乱有关。',w:{nerve:2,spleen:1}},
-  liver2:{n:'中指與無名指指縫間',organ:'肝',tip:'书里说：“中指和无名指之间皮肤——能判断肝脏是否异常”，这里发暗、粗糙提示肝负担偏重。',w:{liver:2,stasis:1}}
-};
-
-/* =========================================================
-   數據：八觀題組（作為可選補充）
-   ========================================================= */
-/* =========================================================
-   田鵬霞《觀手知健康》體系 · 九宮分區 + 掌紋輔線 + 五行手型
-   （蔡洪光偏「手指根全息」；田鵬霞偏「九宮八卦 + 掌紋輔線」，
-    兩者互補，照片無法自動識別紋路，故以「可點選對照」呈現）
-   ========================================================= */
-const JIUGONG = {
-  xun:{n:'巽宮（左上·食指下）',organ:'膽、神經系統',tip:'書中：食指根巽位高大是腦出血的徵兆；若出現凹坑、皮下又有紅色斑點，則是膽結石的信號。對照時看食指根部是否異常隆起或發紅。',w:{liver:2,nerve:2}},
-  li:{n:'離宮（中上·中指下）',organ:'心、腦、血液循環',tip:'離宮出現十字紋，書中提示心律失常；區域發紅多為心火旺盛、血壓容易波動。可對照中指根部與掌心上方。',w:{heart:3,stasis:1}},
-  kun:{n:'坤宮（右上·小指下）',organ:'小腸、泌尿生殖',tip:'坤宮在小魚際下方，異常常見於小腹不適、婦科或前列腺問題。看小指根部一帶是否色暗、有青筋。',w:{intestine:1,kidney:2}},
-  zhen:{n:'震宮（左中·虎口）',organ:'肝、膽',tip:'震宮位於大拇指與食指間的大魚際，青筋明顯書中提示肝膽代謝積滯；也是肝膽區信號集中處。',w:{liver:3,endocrine:1,stasis:1}},
-  ming:{n:'明堂（中心·掌心）',organ:'脾胃、消化（三焦核心）',tip:'明堂就是掌心，是消化與三焦的核心。此處硬結、壓痛或異常凹陷，提示脾胃運化偏弱、內臟機能狀態。',w:{spleen:3,nerve:1}},
-  dui:{n:'兌宮（右中·小魚際）',organ:'肺、氣管、大腸、內分泌',tip:'兌宮對應肺與大腸；異常可見咳嗽、腸燥或內分泌波動。看小魚際一帶是否粗糙、色暗。',w:{lung:3,intestine:1,endocrine:1}},
-  qian:{n:'乾宮（右下·腕外側）',organ:'肺、大腸、筋骨',tip:'乾宮靠近手腕外側，對應肺、大腸與筋骨；書中提示肩頸、腰背的信號。',w:{lung:2,kidney:1,stasis:1}},
-  kan:{n:'坎宮（中下·掌根）',organ:'腎、膀胱、生殖、下焦',tip:'坎宮在掌根正中，凹陷或有青筋提示腎氣不足、泌尿生殖偏弱；也反映腰腿狀態。看掌根是否乾癟、發青。',w:{kidney:3,stasis:1}},
-  gen:{n:'艮宮（左下·拇指根）',organ:'脾胃、結腸',tip:'艮宮在大魚際、拇指根下方，青筋常見腸胃積滯、便秘；是書中消化信號的集中區。',w:{spleen:2,intestine:2,stasis:1}}
-};
-
-const PALMLINES = [
-  {n:'生命線（3 線）',d:'生命力與體質強弱的標誌。線深長清晰＝體質基礎好；斷續、有島紋＝免疫與肺部波動期。'},
-  {n:'智慧線（2 線 · 腦線）',d:'與大腦、神經、心血管相關。模糊斷續＝思慮過度、神經衰弱；過長直貫掌邊＝長期緊張。'},
-  {n:'感情線（1 線）',d:'反映情緒控制與心肺。紊亂、有島紋＝心肺功能與情緒波動。'},
-  {n:'事業線（玉柱線）',d:'提示中老年心腦血管與事業耐力。明顯者多勞心，書中提示中年心血管負荷。'},
-  {n:'健康線',d:'出現健康線反而「不健康」：線越明顯，越提示慢性消耗或代謝問題。'},
-  {n:'性線',d:'反映泌尿生殖系統好壞。缺失或過短＝相關系統偏弱。'},
-  {n:'腕橫紋（手腕線）',d:'與前列腺、泌尿、生殖相關。斷缺或雜亂＝腎氣與生殖偏弱信號。'},
-  {n:'貫橋線',d:'出現提示心臟功能障礙、供血不暢。'},
-  {n:'干擾線',d:'干擾主線的橫豎雜線。多雜線＝身體受多重干擾、處於亞健康。'},
-  {n:'太陽線',d:'與人的智能、名氣有關。過盛或雜亂＝用腦過度。'},
-  {n:'頸椎線',d:'出現提示頸椎增生、頸椎勞損。'},
-  {n:'變異線',d:'代表疾病惡變發展，書中視為需特別重視的異常信號。'},
-  {n:'壽線紋',d:'長壽之象徵；清晰者體質偏穩。'},
-  {n:'便秘線',d:'提示長期頑固性便秘、腸道積滯。'},
-  {n:'放縱線',d:'提示生活耗散過多、體力透支。'},
-  {n:'異性線',d:'書中用於判斷相關消耗，非健康診斷。'},
-  {n:'指腹橫紋線',d:'指腹橫紋多＝睡眠障礙、睡不好。'},
-  {n:'肝分線',d:'出現提示過量飲酒、肝膽代謝壓力。'},
-  {n:'美術線',d:'提示有藝術天賦，書中作性格參考（非健康項）。'},
-  {n:'斷掌紋',d:'易出现肝火過盛、性格果決；也見血壓波動傾向。'},
-  {n:'川字紋',d:'易產生憂鬱、獨立性強；書中提示情緒偏緊。'},
-  {n:'雞爪掌紋',d:'掌紋如雞爪＝提示體弱多病、體質偏弱。'},
-  {n:'白線紋',d:'出現提示腎功能差、腎氣不足。'},
-  {n:'胚芽紋',d:'出現提示氣血雙虧、精力不足。'},
-  {n:'孔子目紋',d:'有此紋代表其人聰明，書中作性格參考（非健康項）。'}
-];
-
-const WUXING = [
-  {n:'金形手',d:'方正厚實、掌指齊整。體質偏實，平時多留意肺與大腸。'},
-  {n:'木形手',d:'修長清瘦、指節分明。肝膽與神經較敏感，容易緊張、睡不好。'},
-  {n:'水形手',d:'圓潤柔軟、肉感豐。腎與泌尿偏弱，注意腰部保暖與水分代謝。'},
-  {n:'火形手',d:'指尖削尖、掌色偏紅。心腦與血液偏熱，易心火旺、血壓波動。'},
-  {n:'土形手',d:'厚重寬大、肉實。以脾胃為本，留意消化與代謝。'}
-];
-
-const GROUPS = [
-{
-  id:'shake', t:'一、握手知健康（手感與掌質）',
-  s:'书里第一件事就是“伸手、摸手感”：手的温度、干湿、软硬，最能直接看出一个人气血足不足、阴阳平不平衡（这些照片拍不出来，得您自己摸了感受）。',
-  o:[
-    {k:'手溫常年偏涼、冰涼',d:'多半是阳虚、气血不足，末梢循环偏弱',w:{qi:2,stasis:1,kidney:1}},
-    {k:'手心發熱、手溫偏熱',d:'阴虚内热，或者心火比较旺',w:{heart:2,qi:1,nerve:1}},
-    {k:'手心潮濕、容易出汗',d:'神经绷得紧，或者脾胃有湿热（书里说“掌心冒汗”常跟胃不舒服一起出现）',w:{nerve:2,spleen:2}},
-    {k:'手掌乾燥、粗糙、脫皮',d:'身体津液不够、血虚风燥，也可能缺维生素',w:{qi:2,spleen:1}},
-    {k:'手掌軟而無力、肌肉松垮',d:'气血不足、脾胃气虚，整个人偏虚',w:{qi:2,spleen:2}},
-    {k:'手掌厚硬、結實有力',d:'底子壮实，但硬过头说明气机堵着、代谢废物偏多',w:{stasis:2,endocrine:1}},
-    {k:'大魚際（拇指根隆起）凹陷',d:'心肺气虚，容易心慌、气短、记性变差',w:{heart:2,lung:2,qi:1}},
-    {k:'大魚際過度隆起、發紅',d:'痰瘀化热，常见于血压、血脂偏高的人',w:{heart:2,endocrine:2,stasis:1}}
-  ]
-},
-{
-  id:'finger', t:'二、觀手指知健康（指形）',
-  s:'拇指连着肺和脾、食指连着肠胃、中指连着心、无名指连着内分泌（肝胆）、小指连着心肾和生殖——手指的形状就是五脏六腑的“小天线”。',
-  o:[
-    {k:'拇指根變細',d:'呼吸系统和肠胃功能偏弱',w:{lung:2,spleen:2,qi:1}},
-    {k:'拇指硬直、不易向後彎',d:'提示血管弹性下降，要留意血压和脑血管',w:{heart:2,stasis:2}},
-    {k:'食指細弱、彎曲',d:'肠胃机能弱，消化吸收打折扣',w:{intestine:2,spleen:2}},
-    {k:'食指根部按壓疼痛或硬化',d:'书里提示便秘、大肠积滞',w:{intestine:3,stasis:1}},
-    {k:'中指偏彎、指尖偏紅',d:'心火偏旺、心脑负担偏重',w:{heart:2,nerve:1}},
-    {k:'中指根出現紅色或暗色斑點',d:'书里跟血压波动有关（红暗斑偏多、青白斑偏少）',w:{heart:3,stasis:1}},
-    {k:'無名指細弱、指節粗大',d:'肝胆机能和内分泌状态偏弱 / 胆经不太通',w:{liver:2,endocrine:2}},
-    {k:'小指短小細弱、自然彎曲',d:'先天肾气不足，常见腰膝酸软、没精神',w:{kidney:3,qi:1}},
-    {k:'手指整體發紫發暗',d:'书里提示小肠机能和末梢循环有血瘀',w:{stasis:3,intestine:1,heart:1}},
-    {k:'指節處有硬結、壓痛',d:'对应经络的气血瘀住不通',w:{stasis:2}}
-  ]
-},
-{
-  id:'nail', t:'三、觀指甲知健康',
-  s:'指甲是“筋的余气”，肝血和气血够不够，会直接写在指甲的颜色、形状和纹路上。',
-  o:[
-    {k:'指甲薄軟、易折斷分層',d:'气血不足，钙和蛋白质不够',w:{qi:2,liver:1}},
-    {k:'指甲有明顯縱紋（豎紋）',d:'代谢不好、肝血不足、长期疲劳',w:{liver:2,qi:2,nerve:1}},
-    {k:'指甲有橫紋、凹溝',d:'肠胃失调，或者刚经历过一场大病、营养不良',w:{spleen:2,intestine:1,qi:1}},
-    {k:'指甲上有白色斑點',d:'缺锌缺钙、消化吸收不好',w:{spleen:2,qi:1}},
-    {k:'指甲凹陷成匙狀（反甲）',d:'有缺铁性贫血的倾向',w:{qi:3,spleen:1}},
-    {k:'指甲顏色偏紫暗',d:'血瘀、组织缺氧，心肺循环有偏差',w:{stasis:3,heart:2}},
-    {k:'指甲顏色蒼白無華',d:'气血虚、有贫血倾向',w:{qi:3}},
-    {k:'指甲偏紅、甲床充血',d:'有热、心火偏旺',w:{heart:2}},
-    {k:'指甲嵌入肉、甲床短小',d:'书里提示要留意肝脏',w:{liver:2}},
-    {k:'指端膨大如鼓槌（杵狀指）',d:'慢性心肺缺氧的重要体征',w:{heart:3,lung:3},red:'建議儘快就醫檢查心肺'}
-  ]
-},
-{
-  id:'luna', t:'四、觀半月痕知健康（月牙）',
-  s:'书里把半月痕叫“人体精力的窗口”：健康的月牙应该是奶白色、边界清楚，大约占指甲的五分之一，两只手有 8～10 个最好。',
-  o:[
-    {k:'半月痕 8 個以上、奶白色、大小適中',d:'气血充盈、精力旺盛的好现象',w:{}},
-    {k:'半月痕很少（僅拇指有或少於 4 個）',d:'体质偏寒、气血不足、免疫力偏低',w:{qi:3,kidney:1}},
-    {k:'半月痕完全沒有',d:'阳虚寒重、循环和代谢偏弱，常见于长期疲劳的人',w:{qi:3,kidney:2,stasis:1}},
-    {k:'半月痕面積過大（超過指甲 1/5）',d:'血压偏高、心脏负荷偏大，书里提醒要防中风',w:{heart:3,stasis:1}},
-    {k:'半月痕顏色偏粉紅 / 鮮紅',d:'内热偏盛、血热，或者血压波动',w:{heart:2,endocrine:1}},
-    {k:'半月痕顏色灰白晦暗',d:'脾胃消化吸收差、气血生成不够',w:{spleen:2,qi:2}},
-    {k:'半月痕顏色發紫發暗',d:'心脑血管循环不通、瘀血偏重',w:{stasis:3,heart:2}},
-    {k:'半月痕近期突然變小或消失',d:'近期消耗过大、免疫力下降的信号',w:{qi:2,nerve:1}}
-  ]
-},
-{
-  id:'vein', t:'五、觀青筋知健康（照片會自動估計，此處可補充具體位置）',
-  s:'书里把青筋（浮出来的静脉）当成“体内垃圾堆积”的标记：哪儿有青筋，就说明哪条经络、哪个部位有瘀堵。',
-  o:[
-    {k:'大魚際青筋明顯',d:'腰腿痛、下肢关节和循环问题',w:{stasis:2,kidney:1}},
-    {k:'拇指根部青筋',d:'书里提示冠状动脉循环负荷，要留意心脏',w:{heart:3,stasis:2}},
-    {k:'食指根部青筋',d:'肠胃积滞、便秘',w:{intestine:2,spleen:2,stasis:1}},
-    {k:'中指根部青筋',d:'跟脑血管供血、头晕头痛相关',w:{heart:2,stasis:2,nerve:1}},
-    {k:'手背青筋明顯凸起',d:'腰背部积滞，常见腰肌劳损',w:{stasis:2,kidney:1}},
-    {k:'腕橫紋附近青筋',d:'泌尿生殖系统瘀滞（妇科 / 前列腺）',w:{kidney:3,stasis:1}},
-    {k:'虎口（合谷附近）青筋',d:'书里跟妇科、月经带下问题相关',w:{kidney:2,stasis:1}},
-    {k:'手掌多處青筋密佈',d:'血液黏稠、血脂偏高、代谢废物多',w:{stasis:3,endocrine:2,heart:1}}
-  ]
-},
-{
-  id:'spot', t:'六、觀三斑知健康（黑斑、白斑、血痣）',
-  s:'书里说的“三斑”，是手掌上三种异常斑点：黑斑主瘀毒、白斑主虚损、血痣主肝胆的脂肪代谢。',
-  o:[
-    {k:'手掌出現黑斑、色素沉著',d:'瘀血和毒素沉积，提示对应反射区的脏腑负担重',w:{stasis:2,kidney:1}},
-    {k:'手掌出現白斑（淡白色斑點）',d:'书里提示缺钙，或者受过大的情绪打击、精神压力大',w:{nerve:2,qi:2}},
-    {k:'手掌出現紅色血痣（朱砂樣小紅點）',d:'书里提示脂肪肝、慢性肝炎、胆结石等肝胆问题',w:{liver:3,stasis:2},red:'建議做肝功能與肝膽超聲檢查'}
-  ]
-},
-{
-  id:'color', t:'七、掌色與掌溫（照片會自動估計，此處補充主觀感受）',
-  s:'书里特别讲究“手掌对比”：跟同龄人比、跟自己过去比，掌色偏红、白、黄、青、黑，各自对应不同的身体状态。',
-  o:[
-    {k:'掌色紅白相間、潮紅',d:'有内热、血热，或者血脂偏高',w:{heart:2,endocrine:2}},
-    {k:'掌色蒼白少血色',d:'气血不足、有贫血倾向、肺脾气虚',w:{qi:3,lung:1,spleen:1}},
-    {k:'掌色發黃、晦黃',d:'脾胃湿热，或者肝胆疏泄不利',w:{spleen:2,liver:2}},
-    {k:'掌色青紫、暗滯',d:'寒凝血瘀、循环代谢差',w:{stasis:3,qi:1}},
-    {k:'掌色晦暗無光澤',d:'正气不足、慢性消耗',w:{qi:2,kidney:2}},
-    {k:'大小魚際出現朱砂樣紅赤（肝掌）',d:'慢性肝病的重要体征',w:{liver:3,stasis:2},red:'建議就醫檢查肝功能'},
-    {k:'手掌局部溫度明顯偏低',d:'对应反射区气血不足、寒凝',w:{qi:2,stasis:1}}
-  ]
-},
-{
-  id:'line', t:'八、觀手紋知健康（三大主線）',
-  s:'1 线（感情线）连着心肺和情绪，2 线（智慧线 / 脑线）连着神经和心脑血管，3 线（生命线）连着体质、精力和免疫。',
-  o:[
-    {k:'生命線（3 線）斷續、有島紋',d:'体质偏弱期、免疫力和肺部机能波动',w:{qi:2,lung:2}},
-    {k:'生命線淺、短、弧度小',d:'精力不足、体质偏弱',w:{qi:2,kidney:1}},
-    {k:'智慧線（2 線）模糊、斷續',d:'神经衰弱、思虑过度，或者肠胃功能紊乱',w:{nerve:2,spleen:2,heart:1}},
-    {k:'智慧線過長、直貫掌邊',d:'思虑过度、心脑长期处于紧张状态',w:{nerve:2,heart:1}},
-    {k:'感情線（1 線）紊亂、有島紋',d:'心肺功能和情绪波动',w:{heart:2,lung:1,nerve:2}},
-    {k:'掌紋細雜、煩惱紋多',d:'精神紧张、内分泌和植物神经失调',w:{nerve:2,endocrine:2}},
-    {k:'掌根正中出現「人」形紋',d:'长期睡不好、神经衰弱',w:{nerve:3,heart:1}},
-    {k:'三大主線清晰、深長、少雜紋',d:'体质基础比较好的现象',w:{}}
-  ]
-}
-];
-
-/* =========================================================
-   調理建議庫（按維度）
    ========================================================= */
 const ADVICE = {
   heart:{
@@ -749,7 +457,7 @@ const REDFLAGS = {
 /* =========================================================
    狀態
    ========================================================= */
-const state = { photos:{A:null,B:null}, auto:{A:null,B:null}, zones:new Set(), jg:new Set(), picks:new Set(), palm:null, camFor:null, stream:null };
+const state = { photos:{A:null,B:null}, auto:{A:null,B:null}, camFor:null, stream:null };
 
 // 本機 file:// 開啟時，提示自動分析可能被瀏覽器攔截
 if(!window.isSecureContext){
@@ -891,7 +599,7 @@ function rgb2hsl(r,g,b){
    手掌分區（用於「分析手各部分的顏色」）
    坐標為照片像素的歸一化比例（fx,fy=取色框左上；fw,fh=大小）
    假設照片為「掌心朝上、手指向上、右掌（拇指在左）」；
-   拍攝方向不同時，請在 STEP 2 手動標記反射區校正。
+   拍攝方向不同時，結果可能略有偏移，僅供輔助參考。
    w = 該部位對應的系統權重（蔡洪光手指根全息思路）
    ========================================================= */
 const REGIONS = [
@@ -992,14 +700,14 @@ function analyzePhoto(slot, dataURL){
           +'<div class="loading">⚠ 當前瀏覽器在本機檔案（file://）下禁止讀取照片像素，自動分析無法執行。兩個辦法：<br>'
           +'① 試試下方「從相冊選」選同一張圖；<br>'
           +'② 在本頁所在資料夾執行 <code>python3 -m http.server 8000</code>，再用網址 <code>http://localhost:8000</code> 開啟，即可完整分析。<br>'
-          +'分析暫停期間，您仍可在 STEP 4 補充觀察並生成報告。</div>');
+          +'分析暫停期間，您稍後可重新拍攝。</div>');
         state.auto[slot]=null; return;
       }
       // ===== 手掌：分區顏色分析（分析手各部位的顏色）=====
       if(slot==='A'){
         const res = analyzeRegions(d,TW,TH);
         if(!res){
-          finish('<h4>自動圖像分析（手掌）</h4><div class="loading">未能識別到足夠的手部畫面，請在光線充足處重新拍攝、讓手部佔滿畫面；您亦可於 STEP 2 手動標記反射區、STEP 4 補充觀察。</div>');
+          finish('<h4>自動圖像分析（手掌）</h4><div class="loading">未能識別到足夠的手部畫面，請在光線充足處重新拍攝、讓手部佔滿畫面；請在光線充足處重拍。</div>');
           state.auto.A=null; return;
         }
         const weights = regionsToWeights(res);
@@ -1028,7 +736,7 @@ function analyzePhoto(slot, dataURL){
       let pool=skin, pn=n, pr=sr,pg=sg,pb=sb, pl=sl, ps=ss;
       if(n<200 && na>=200){ pool=all; pn=na; pr=asr;pg=asg;pb=asb; pl=asl; ps=ass; }
       if(pn<200){
-        finish('<h4>自動圖像分析（指甲）</h4><div class="loading">未能識別到足夠的指甲畫面，請重拍或從相冊選；您亦可於 STEP 4 補充觀察。</div>');
+        finish('<h4>自動圖像分析（指甲）</h4><div class="loading">未能識別到足夠的指甲畫面，請重拍或從相冊選。</div>');
         state.auto.B=null; return;
       }
       const mR=pr/pn,mG=pg/pn,mB=pb/pn,mL=pl/pn,mS=ps/pn;
@@ -1071,7 +779,7 @@ function analyzePhoto(slot, dataURL){
       state.auto.B = {metrics, scores, slot:'B'};
       renderAutoPanel('B');
     }catch(e){
-      finish('<h4>自動圖像分析'+(slot==='A'?'（手掌）':'（指甲）')+'</h4><div class="loading">分析失敗（圖片格式或權限問題），您仍可於 STEP 4 補充觀察。</div>');
+      finish('<h4>自動圖像分析'+(slot==='A'?'（手掌）':'（指甲）')+'</h4><div class="loading">分析失敗（圖片格式或權限問題），請重新拍攝。</div>');
       state.auto[slot]=null;
     }
   };
@@ -1100,7 +808,7 @@ function renderAutoPanel(slot){
       + '</div>';
   }
   panel.innerHTML='<h4>自動圖像分析'+(slot==='A'?'（手掌 · 分區顏色）':'（指甲）')+'</h4>'+body
-    + '<div class="auto-note">以上為照片各部位色彩與青筋的客觀量化（比肉眼判掌色更一致）。結果受光線、白平衡、拍攝角度影響，僅供輔助；拍攝方向不同可在 STEP 2 手動標記反射區校正。</div>';
+    + '<div class="auto-note">以上為照片各部位色彩與青筋的客觀量化（比肉眼判掌色更一致）。結果受光線、白平衡、拍攝角度影響，僅供輔助；結果僅供輔助參考。</div>';
   scheduleGenerate();
 }
 function autoWeights(a){
@@ -1123,124 +831,6 @@ function autoWeights(a){
 }
 
 /* =========================================================
-   STEP 2：反射區
-   ========================================================= */
-document.querySelectorAll('.zone').forEach(el=>{
-  el.addEventListener('click', ()=>{
-    const k = el.getAttribute('data-z');
-    if(state.zones.has(k)){ state.zones.delete(k); el.classList.remove('on'); }
-    else { state.zones.add(k); el.classList.add('on'); }
-    renderZones(); if(state.zones.size) markStep(2);
-    scheduleGenerate();
-  });
-});
-function renderZones(){
-  const box = document.getElementById('zoneList');
-  if(state.zones.size === 0){
-    box.innerHTML = '<p class="map-hint">尚未標記區域。點左圖圓圈後，這裡會列出該反射區對應的臟腑與書中提示。</p>';
-    return;
-  }
-  box.innerHTML = [...state.zones].map(k=>{
-    const z = ZONES[k];
-    return '<div class="zone-item"><span class="rm" onclick="removeZone(\''+k+'\')">移除</span>'
-      + '<b>'+z.n+'</b> · '+z.organ+'<div style="margin-top:4px;color:#5b554c">'+z.tip+'</div></div>';
-  }).join('');
-}
-function removeZone(k){
-  state.zones.delete(k);
-  document.querySelector('.zone[data-z="'+k+'"]').classList.remove('on');
-  renderZones();
-  scheduleGenerate();
-}
-
-/* =========================================================
-   STEP 3：田鵬霞 · 九宮分區（可選對照）
-   ========================================================= */
-document.querySelectorAll('.jg').forEach(el=>{
-  el.addEventListener('click', ()=>{
-    const k = el.getAttribute('data-jg');
-    if(state.jg.has(k)){ state.jg.delete(k); el.classList.remove('on'); }
-    else { state.jg.add(k); el.classList.add('on'); }
-    renderJG(); if(state.jg.size) markStep(3);
-    scheduleGenerate();
-  });
-});
-function renderJG(){
-  const box = document.getElementById('jgList');
-  if(state.jg.size === 0){
-    box.innerHTML = '<p class="map-hint">尚未選取宮位。點左圖宮位後，這裡會列出對應臟腑與書中提示；選中的宮位會併入報告的「系統關注度」。</p>';
-    return;
-  }
-  box.innerHTML = [...state.jg].map(k=>{
-    const z = JIUGONG[k];
-    return '<div class="zone-item"><span class="rm" onclick="removeJG(\''+k+'\')">移除</span>'
-      + '<b>'+z.n+'</b> · '+z.organ+'<div style="margin-top:4px;color:#5b554c">'+z.tip+'</div></div>';
-  }).join('');
-}
-function removeJG(k){
-  state.jg.delete(k);
-  document.querySelector('.jg[data-jg="'+k+'"]').classList.remove('on');
-  renderJG();
-  scheduleGenerate();
-}
-// 掌紋輔線速查（田鵬霞）
-document.getElementById('linesBox').innerHTML = PALMLINES.map(l=>
-  '<div class="line-card"><div class="lc-name">'+l.n+'</div><div class="lc-desc">'+l.d+'</div></div>'
-).join('');
-// 五行手型
-document.getElementById('wuxingBox').innerHTML = WUXING.map(w=>
-  '<div class="wx-card"><div class="wx-name">'+w.n+'</div><div class="wx-desc">'+w.d+'</div></div>'
-).join('');
-
-// 掌形（五行）→ 系統權重映射（「掌形」屬手診形態觀察，計入報告）
-const WUXING_W = {
-  '金形手':{lung:2,intestine:1},
-  '木形手':{liver:2,nerve:2},
-  '水形手':{kidney:2,spleen:1},
-  '火形手':{heart:2,endocrine:1},
-  '土形手':{spleen:2,endocrine:1,nerve:1}
-};
-const palmPick = document.getElementById('palmPick');
-palmPick.innerHTML = WUXING.map(w=>
-  '<label class="wx-opt"><input type="radio" name="palm" value="'+w.n+'">'
-  + '<span>'+w.n+'</span><small>'+w.d+'</small></label>'
-).join('');
-palmPick.addEventListener('change', e=>{
-  if(e.target.name!=='palm') return;
-  state.palm = e.target.value || null;
-  palmPick.querySelectorAll('.wx-opt').forEach(l=>l.classList.remove('on'));
-  if(e.target.checked) e.target.closest('.wx-opt').classList.add('on');
-  markStep(4);
-  scheduleGenerate();
-});
-
-/* =========================================================
-   STEP 3：問卷渲染（可選補充）
-   ========================================================= */
-const quiz = document.getElementById('quiz');
-quiz.innerHTML = GROUPS.map(g=>
-  '<div class="qgroup"><h3>'+g.t+'</h3><p class="qsub">'+g.s+'</p><div class="opts">'
-  + g.o.map((o,i)=>{
-      const id = g.id+'-'+i;
-      const red = o.red ? '<span class="badge-red">建議就醫</span>' : '';
-      return '<label class="opt'+(o.red?' red':'')+'" for="'+id+'">'
-        + '<input type="checkbox" id="'+id+'" data-g="'+g.id+'" data-i="'+i+'">'
-        + '<span class="txt"><span class="k">'+o.k+red+'</span><span class="src">'+o.d+'</span></span></label>';
-    }).join('')
-  + '</div></div>'
-).join('');
-
-quiz.addEventListener('change', e=>{
-  const t = e.target;
-  if(t.type !== 'checkbox') return;
-  const key = t.getAttribute('data-g')+'-'+t.getAttribute('data-i');
-  if(t.checked) state.picks.add(key); else state.picks.delete(key);
-  t.closest('.opt').classList.toggle('on', t.checked);
-  if(state.picks.size) markStep(4);
-  scheduleGenerate();
-});
-
-/* =========================================================
    步驟狀態
    ========================================================= */
 function markStep(n){
@@ -1257,62 +847,69 @@ function scheduleGenerate(){
 /* =========================================================
    報告生成
    ========================================================= */
-function pickObjects(){
-  const out = [];
-  state.picks.forEach(key=>{
-    const [g,i] = key.split('-');
-    const grp = GROUPS.find(x=>x.id===g);
-    if(grp) out.push({group:grp.t, opt:grp.o[+i]});
-  });
-  return out;
+/* =========================================================
+   報告生成（魔鏡風格：體質辨識 + 五臟狀態分析 + 詳細診斷報告）
+   ========================================================= */
+const ORGANS = [
+  {k:'heart',  n:'心', full:'心臟', c:'#b23a2f'},
+  {k:'lung',   n:'肺', full:'肺臟', c:'#2e86c1'},
+  {k:'spleen', n:'脾', full:'脾臟', c:'#a8802c'},
+  {k:'liver',  n:'肝', full:'肝臟', c:'#6b7b2c'},
+  {k:'kidney', n:'腎', full:'腎臟', c:'#1e8449'}
+];
+const OTHERS = ['intestine','endocrine','qi','stasis','nerve'];
+function sc5(v){ return Math.max(36, Math.min(99, Math.round(100 - Math.min(v,2)*32))); }
+function scLab(sc){ return sc>=80?'狀態良好':(sc>=60?'需要注意':'建議調理'); }
+function scColor(sc){ return sc>=80?'#2f6b5e':(sc>=60?'#a8802c':'#b23a2f'); }
+
+function pickConstitution(W){
+  const cand = [
+    {n:'氣虛質', v:W.qi, d:'容易疲累、說話沒力氣、動一動就出汗、容易感冒。多與勞累過度、脾胃功能偏弱有關，宜规律作息、適度食補。'},
+    {n:'血瘀質', v:W.stasis, d:'膚色口唇偏暗、容易有瘀青，手上青筋與暗斑較明顯。氣行不暢、血行偏緩的人多見，宜多活動、少久坐。'},
+    {n:'濕熱質', v:W.spleen*0.6 + W.endocrine*0.5, d:'掌色偏紅偏黃、容易口苦口黏、臉上出油。嗜辛辣油膩、常熬夜的人多見，飲食宜清淡。'},
+    {n:'痰濕質', v:(W.spleen*0.7 + W.intestine*0.3)*0.8, d:'身體偏沉重、容易困倦，掌面偏黃偏厚。飲食偏甜膩、缺少運動的人多見，宜健運脾胃。'},
+    {n:'氣鬱質', v:W.nerve, d:'情緒低落、容易緊張、胸脅脹滿、睡眠不佳。多因情志不暢、精神壓力大，宜疏肝理氣、保持心情舒暢。'},
+    {n:'陽虛質', v:W.kidney*0.9 + W.qi*0.3, d:'怕冷、手腳偏涼、精力偏弱、夜尿偏多。宜溫補腎陽、注意保暖、避免熬夜受寒。'},
+    {n:'陰虛內熱質', v:W.heart*0.5 + W.endocrine*0.3, d:'掌色偏紅、容易口乾咽燥、手足心熱、睡眠偏淺。宜滋陰清熱，少辛辣、多潤燥食物。'}
+  ];
+  cand.sort((a,b)=>b.v-a.v);
+  if(cand[0].v < 0.35) return {n:'平和質', d:'手部色澤均勻潤澤，未見明顯異常信號，整體狀態良好，請继续保持健康的生活方式。'};
+  return cand[0];
 }
+function seasonAdvice(){
+  const m = new Date().getMonth()+1;
+  if(m>=2&&m<=4)  return '春季養肝舒肝：早睡早起、多伸展散步、保持情緒舒暢；飲食少酸多甘，可食山藥、紅棗、菠菜等。';
+  if(m>=5&&m<=7)  return '夏季養心：避免大汗耗氣，午間宜小憩；飲食清淡，可食蓮子、百合、綠豆，少冰飲。';
+  if(m>=8&&m<=10) return '秋季潤肺：早臥早起、防燥保濕；可食梨、銀耳、蜂蜜、山藥，少辛辣炸烤。';
+  return '冬季補腎藏陽：早臥晚起、注意保暖、避免過勞；可食黑豆、核桃、枸杞等，溫補而不燥。';
+}
+
 function generate(){
   Object.keys(W).forEach(k=>W[k]=0);
-  const picked = pickObjects();
-  picked.forEach(p=>{
-    const w = p.opt.w || {};
-    Object.keys(w).forEach(k=>{ if(W[k]!==undefined) W[k]+=w[k]; });
-  });
-  state.zones.forEach(k=>{
-    const w = ZONES[k].w || {};
-    Object.keys(w).forEach(d=>{ if(W[d]!==undefined) W[d]+=w[d]; });
-  });
-  state.jg.forEach(k=>{
-    const w = JIUGONG[k].w || {};
-    Object.keys(w).forEach(d=>{ if(W[d]!==undefined) W[d]+=w[d]; });
-  });
-  if(state.palm && WUXING_W[state.palm]){
-    const pw=WUXING_W[state.palm];
-    Object.keys(pw).forEach(d=>{ if(W[d]!==undefined) W[d]+=pw[d]; });
-  }
   ['A','B'].forEach(sk=>{
     const aw = autoWeights(state.auto[sk]);
     Object.keys(aw).forEach(d=>{ if(W[d]!==undefined) W[d]+=aw[d]; });
   });
 
-  const hasInput = picked.length>0 || state.zones.size>0 || state.jg.size>0 || state.auto.A || state.auto.B;
   const r = document.getElementById('report');
-  if(!hasInput){
+  if(!state.auto.A && !state.auto.B){
     r.classList.add('show');
-    r.innerHTML = '<div class="tip"><h4>報告會自動生成</h4><p>請先在 STEP 1 拍下您的手（系統會自動分析），或標記反射區、選取九宮、補充勾選——任何一項有內容，下方報告都會自動更新。</p></div>';
+    r.innerHTML = '<div class="tip"><h4>報告會自動生成</h4><p>請先在 STEP 1 拍下您的手掌或指甲——拍照完成後，下方報告會自動更新，無需任何勾選。</p></div>';
     return;
   }
 
-  const total = Object.values(W).reduce((a,b)=>a+b,0) || 1;
-  const rank = Object.keys(W).map(k=>({k,n:DIMS[k].n,c:DIMS[k].c,v:W[k],pct:Math.round(W[k]/total*100)}))
-                  .sort((a,b)=>b.v-a.v);
-  const maxV = Math.max(1, rank[0].v);
-  const top = rank.filter(x=>x.v>0).slice(0,4);
-  const reds = picked.filter(p=>p.opt.red);
-
+  const five = ORGANS.map(o=>{ const sc=sc5(W[o.k]); return Object.assign({},o,{sc,lab:scLab(sc)}); });
+  const overall = Math.round(five.reduce((a,x)=>a+x.sc,0)/five.length);
+  const con = pickConstitution(W);
+  const rank = Object.keys(W).map(k=>({k,n:DIMS[k].n,c:DIMS[k].c,v:W[k]})).sort((a,b)=>b.v-a.v);
+  const weak = five.slice().sort((a,b)=>a.sc-b.sc).slice(0,2);           // 最需調理的兩個臟
   const now = new Date();
   const stamp = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'
               + String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')
               + ':'+String(now.getMinutes()).padStart(2,'0');
 
   let html = '';
-
-  // 頭部
+  // 頭部：照片 + 體質辨識 + 綜合評分
   html += '<div class="rp-head">';
   if(state.photos.A || state.photos.B){
     html += '<div class="rp-photos">';
@@ -1320,18 +917,39 @@ function generate(){
     if(state.photos.B) html += '<figure><img src="'+state.photos.B+'" alt="指甲照片"><figcaption>手指指甲</figcaption></figure>';
     html += '</div>';
   }
-  html += '<div><h2>您的手診自查報告</h2>'
-       +  '<div class="meta">生成時間：'+stamp+' ｜ 自動分析 '
-       +  ((state.auto.A||state.auto.B)?'已完成':'未拍攝')+' ｜ 補充觀察 '+picked.length+' 項'
-       +  ' ｜ 標記反射區 '+state.zones.size+' 處 ｜ 九宮 '+state.jg.size+' 處</div>'
-       +  '<div class="meta">依據：蔡洪光醫師《觀手知健康》（經絡全息 · 手指根全息區）＋ 田鵬霞《觀手知健康》（九宮八卦 · 掌紋輔線）雙體系整理 · 僅供養生參考</div></div></div>';
+  html += '<div class="con-grid">'
+       +  '<div class="con-card"><div class="con-t">體質辨識</div><div class="con-chip">'+con.n+'</div></div>'
+       +  '<div class="con-card"><div class="con-t">綜合評分</div><div class="con-score">'+overall+'<small> / 100</small></div></div>'
+       +  '</div>';
+  html += '<div class="meta" style="flex:1;min-width:180px">生成時間：'+stamp+'<br>依據：蔡洪光《觀手知健康》＋ 田鵬霞《觀手知健康》雙體系整理 · 僅供養生參考</div></div>';
 
-  // 照片結合分析：連接語
-  if(state.auto.A||state.auto.B){
-    html += '<div class="rp-bridge">上圖就是您剛拍的手。系統自動把您的手掌切成 <b>9 個部位、逐區取色對比</b>（也就是「分析手各部分的顏色」），標出偏紅 / 白 / 黃 / 青 / 暗與青筋明顯的地方；再結合您在 STEP 4 填的<b>掌形、手指形態、各種掌紋</b>與其他補充觀察，合併成下面的「各系統關注度」。</div>';
+  html += '<div class="rp-bridge">上圖就是您剛拍的手。系統自動把手掌切成 <b>9 個部位、逐區取色對比</b>，標出偏紅 / 白 / 黃 / 青 / 暗與青筋明顯的地方，再換算成下面的五臟狀態評分——全程自動，無需勾選。</div>';
+
+  // 五臟狀態分析（評分卡）
+  html += '<h3 style="margin:16px 0 8px;font-size:16px">五臟狀態分析</h3><div class="or-grid">';
+  five.forEach(o=>{
+    html += '<div class="or-card"><div class="or-top"><span class="or-name"><span class="m-dot" style="background:'+o.c+'"></span>'+o.full+'</span>'
+         +  '<span class="or-score" style="color:'+scColor(o.sc)+'">'+o.sc+'<small style="font-size:11px;color:var(--ink-2)"> 分</small></span></div>'
+         +  '<div class="or-track"><span class="or-fill" style="width:'+o.sc+'%;background:'+scColor(o.sc)+'"></span></div>'
+         +  '<div class="or-lab">'+o.lab+'</div></div>';
+  });
+  html += '</div>';
+  html += '<p class="bars-note">分數由手部分區顏色信號換算：分數越高狀態越好，80 分以上為「狀態良好」、60–79 為「需要注意」、60 以下為「建議調理」。分數受光線與拍攝角度影響，僅供養生對照，不構成醫療診斷。</p>';
+
+  // 其他系統觀察（僅列有信號者）
+  const others = rank.filter(x=>OTHERS.includes(x.k) && x.v>0.2);
+  if(others.length){
+    const mx = Math.max(1, others[0].v);
+    html += '<h3 style="margin:16px 0 6px;font-size:16px">其他系統觀察</h3><div class="bars">';
+    others.forEach(x=>{
+      html += '<div class="bar"><span class="nm">'+x.n+'</span><span class="track">'
+           +  '<span class="fill" style="width:'+Math.round(x.v/mx*100)+'%;background:'+x.c+'"></span></span>'
+           +  '<span class="pc">'+sc5(x.v)+' 分</span></div>';
+    });
+    html += '</div>';
   }
 
-  // 自動圖像分析節
+  // 自動圖像分析 · 分區取色
   ['A','B'].forEach(sk=>{
     const a=state.auto[sk]; if(!a) return;
     html += '<h3 style="margin:18px 0 6px;font-size:16px">自動圖像分析 · '+(sk==='A'?'手掌（分區顏色）':'指甲')+'</h3>';
@@ -1349,32 +967,31 @@ function generate(){
         + '</div>';
     }
   });
-  if(state.auto.A||state.auto.B){
-    html += '<div class="auto-note" style="margin:6px 0 0">上面的自動分析，是根據您照片的顏色和紋理客觀算出來的，權重已經併進下面的「系統關注度」裡。它受光線、拍攝角度影響，只作輔助參考。</div>';
-  }
 
-  // 關注度
-  html += '<h3 style="margin:18px 0 4px;font-size:16px">各系統關注度</h3>'
-       +  '<p class="desc" style="margin-bottom:10px">下面這張圖，是「自動分析 ＋ 您標記的反射區 / 九宮 ＋ STEP 4 補充觀察」合併後的相對分佈。<b>條越長、數字越大，說明這個系統在您手上的信號越集中、越值得留意；這裡的「占比」不是患病概率，更不是嚴重程度。</b></p><div class="bars">';
-  rank.filter(x=>x.v>0).forEach(x=>{
-    const lv = x.pct>=30?'強':(x.pct>=12?'中':'弱');
-    const lvcls = x.pct>=30?'lv-strong':(x.pct>=12?'lv-mid':'lv-weak');
-    html += '<div class="bar"><span class="nm">'+x.n+'</span><span class="track">'
-         +  '<span class="fill" style="width:'+Math.round(x.v/maxV*100)+'%;background:'+x.c+'"></span></span>'
-         +  '<span class="lv-tag '+lvcls+'">'+lv+'</span>'
-         +  '<span class="pc">'+x.pct+'%</span></div>';
+  // 詳細診斷報告
+  html += '<h3 style="margin:20px 0 8px;font-size:16px">詳細診斷報告</h3><div class="dreport">';
+  html += '<div class="dsec"><h4>【體質特徵】</h4>'
+       +  '<p>根據手診分析，您的體質為 <b>'+con.n+'</b>。</p><p>'+con.d+'</p></div>';
+  html += '<div class="dsec"><h4>【五臟狀態分析】</h4><ul>';
+  five.forEach(o=>{
+    let t;
+    if(o.sc>=80) t='狀態良好，功能正常，繼續保持健康的生活方式。';
+    else if(o.sc>=60) t='基本正常，但需留意疲勞與作息，避免過度勞累。'+ADVICE[o.k].sign;
+    else t='需要重點關注調養：'+ADVICE[o.k].sign;
+    html += '<li><b>'+o.full+'：</b>'+t+'</li>';
   });
+  html += '</ul></div>';
+  html += '<div class="dsec"><h4>【季節養生建議】</h4><p>根據四時養生原則，建議：</p><p>'+seasonAdvice()+'</p></div>';
   html += '</div>';
-  html += '<p class="bars-note">「強 / 中 / 弱」是信號強度的分級：占比 ≥30% 為「強」、≥12% 為「中」、其餘為「弱」。百分比是該系統在全部信號中的相對份額（所有有信號系統相加為 100%）。數值會隨拍攝光線與角度波動，僅供養生對照，不構成醫療診斷。</p>';
 
-  // 重點提示
-  html += '<h3 style="margin:18px 0 4px;font-size:16px">重點關注與調理建議</h3><div class="tips">';
-  top.forEach((x,idx)=>{
-    const a = ADVICE[x.k];
+  // 重點調理建議（分數最低的兩個臟）
+  html += '<h3 style="margin:18px 0 4px;font-size:16px">重點調理建議</h3><div class="tips">';
+  weak.forEach((o,idx)=>{
+    const a = ADVICE[o.k];
     html += '<div class="tip'+(idx===0?' lv3':'')+'">'
-      + '<h4>'+x.n+'（'+ (idx===0?'首要':'次要') +'關注）</h4>'
+      + '<h4>'+o.full+'（'+ (idx===0?'首要調理':'次要調理') +' · '+o.sc+' 分）</h4>'
       + '<p>'+a.sign+'</p>'
-      + '<div class="quote">手就像一面鏡子照出內臟：手上顏色、形狀、紋路的變化，其實是全身氣血好壞的信號。這部分綜合參考蔡洪光醫師《觀手知健康》（經絡全息 · 手指根全息區）與田鵬霞《觀手知健康》（九宮八卦 · 掌紋輔線）兩套體系的解讀。</div>'
+      + '<div class="quote">手就像一面鏡子照出內臟：手上顏色、形狀、紋路的變化，其實是全身氣血好壞的信號。本節綜合蔡洪光《觀手知健康》（經絡全息）與田鵬霞《觀手知健康》（九宮掌紋）兩套體系解讀。</div>'
       + '<div class="acu" style="margin-top:10px"><h4>經絡全息調理（手掌刺激術）</h4>'
       + a.acu.map(p=>'<div class="row"><span class="pt">'+p[0]+'</span><span class="val">'+p[1]+'</span></div>').join('')
       + '</div>'
@@ -1383,32 +1000,9 @@ function generate(){
   });
   html += '</div>';
 
-  // 標記反射區回顧
-  if(state.zones.size){
-    html += '<h3 style="margin:20px 0 6px;font-size:16px">已標記的反射區（蔡洪光 · 手指根全息）</h3><div class="chips">'
-         +  [...state.zones].map(k=>'<span class="chip">'+ZONES[k].n+'</span>').join('')+'</div>';
-  }
-  if(state.jg.size){
-    html += '<h3 style="margin:20px 0 6px;font-size:16px">已選取的九宮（田鵬霞體系）</h3><div class="chips">'
-         +  [...state.jg].map(k=>'<span class="chip">'+JIUGONG[k].n+'</span>').join('')+'</div>';
-  }
-  if(state.palm){
-    html += '<h3 style="margin:20px 0 6px;font-size:16px">已選掌形（五行手型 · STEP 4）</h3><div class="chips"><span class="chip">'+state.palm+'</span></div>';
-  }
-
-  // 紅旗
-  html += '<div class="redflag"><h4>需要留意 / 建議就醫</h4>';
-  if(reds.length){
-    html += '<p>您勾選了以下高警示項目：</p><ul>'
-         +  reds.map(p=>'<li><b>'+p.opt.k+'</b> —— '+p.opt.red+'</li>').join('')+'</ul>';
-  }
-  html += '<ul>'+REDFLAGS.base.map(t=>'<li>'+t+'</li>').join('')+'</ul></div>';
-
-  // 勾選回顧
-  if(picked.length){
-    html += '<h3 style="margin:20px 0 6px;font-size:16px">本次補充觀察記錄</h3><div class="chips">'
-         +  picked.map(p=>'<span class="chip">'+p.opt.k+'</span>').join('')+'</div>';
-  }
+  // 需要留意
+  html += '<div class="redflag"><h4>需要留意 / 建議就醫</h4><ul>'
+       +  REDFLAGS.base.map(t=>'<li>'+t+'</li>').join('')+'</ul></div>';
 
   html += '<div class="disclaimer" style="margin-top:18px"><b>再次提醒：</b>自動圖像分析與手診均屬傳統經驗總結，'
        +  '本報告僅為自我觀察的參考，不構成醫療診斷。任何持續或加重的症狀，請諮詢執業中醫師或到醫院做規範檢查。</div>';
@@ -1420,41 +1014,29 @@ function generate(){
 
   r.innerHTML = html;
   r.classList.add('show');
-  markStep(5);
+  markStep(2);
   r.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function reportText(){
-  const picked = pickObjects();
-  const total = Object.values(W).reduce((a,b)=>a+b,0) || 1;
-  const rank = Object.keys(W).filter(k=>W[k]>0).sort((a,b)=>W[b]-W[a]);
-  let s = '【觀手知健康 · 手診自查報告】\n依據：蔡洪光《觀手知健康》（經絡全息）＋ 田鵬霞《觀手知健康》（九宮掌紋）雙體系\n\n';
-  if(state.auto.A || state.auto.B){
-    s += '◆ 自動圖像分析（系統幫您看掌色 / 青筋 / 紋路，受拍攝影響，僅輔助）\n';
-    ['A','B'].forEach(sk=>{ const a=state.auto[sk]; if(a) s+='  '+(sk==='A'?'手掌':'指甲')+'：'+a.metrics.map(m=>m.name+'='+m.val).join('；')+'\n'; });
-    s += '\n';
-  }
-  s += '◆ 各系統關注度\n';
-  rank.forEach(k=>{ s += '  '+DIMS[k].n+'：'+Math.round(W[k]/total*100)+'%\n'; });
-  s += '\n◆ 重點調理建議（綜合蔡洪光《觀手知健康》經絡全息 ＋ 田鵬霞《觀手知健康》九宮掌紋 兩套體系解讀）\n';
-  rank.slice(0,4).forEach(k=>{
-    const a = ADVICE[k];
-    s += '\n【'+DIMS[k].n+'】'+a.sign+'\n'
-      +  '  穴位：'+a.acu.map(x=>x[0]).join('、')+'\n'
-      +  '  飲食：'+a.food+'\n  起居：'+a.life+'\n';
+  const five = ORGANS.map(o=>{ const sc=sc5(W[o.k]); return Object.assign({},o,{sc,lab:scLab(sc)}); });
+  const overall = Math.round(five.reduce((a,x)=>a+x.sc,0)/five.length);
+  const con = pickConstitution(W);
+  let s = '【觀手知健康 · 手診報告】\n依據：蔡洪光《觀手知健康》＋ 田鵬霞《觀手知健康》雙體系\n\n';
+  s += '◆ 體質辨識：'+con.n+'\n◆ 綜合評分：'+overall+' / 100\n\n';
+  s += '◆ 五臟狀態分析\n';
+  five.forEach(o=>{ s += '  '+o.full+'：'+o.sc+' 分（'+o.lab+'）\n'; });
+  s += '\n◆ 分區取色分析\n';
+  ['A','B'].forEach(sk=>{
+    const a=state.auto[sk]; if(!a) return;
+    if(a.regions){ s += '  手掌：'+a.regions.map(rg=>rg.n+'→'+rg.label).join('；')+'\n'; }
+    else if(a.metrics){ s += '  指甲：'+a.metrics.map(m=>m.name+'='+m.val).join('；')+'\n'; }
   });
-  if(state.zones.size){
-    s += '\n◆ 標記反射區（蔡洪光 · 手指根全息）\n'+[...state.zones].map(k=>'  '+ZONES[k].n+'（'+ZONES[k].organ+'）').join('\n')+'\n';
-  }
-  if(state.jg.size){
-    s += '\n◆ 選取九宮（田鵬霞體系）\n'+[...state.jg].map(k=>'  '+JIUGONG[k].n+'（'+JIUGONG[k].organ+'）').join('\n')+'\n';
-  }
-  if(state.palm){
-    s += '\n◆ 掌形（五行手型 · STEP 4）\n  '+state.palm+'\n';
-  }
-  if(picked.length){
-    s += '\n◆ 補充觀察記錄\n'+picked.map(p=>'  · '+p.opt.k+'（'+p.opt.d+'）').join('\n')+'\n';
-  }
+  s += '\n◆ 重點調理建議\n';
+  five.slice().sort((a,b)=>a.sc-b.sc).slice(0,2).forEach(o=>{
+    const a = ADVICE[o.k];
+    s += '\n【'+o.full+' · '+o.sc+' 分】'+a.sign+'\n  穴位：'+a.acu.map(x=>x[0]).join('、')+'\n  飲食：'+a.food+'\n  起居：'+a.life+'\n';
+  });
   s += '\n※ 本報告僅供養生參考，不構成醫療診斷，不適請就醫。\n';
   return s;
 }
@@ -1470,21 +1052,15 @@ function copyReport(){
   t.style.height = '0';
 }
 function resetAll(){
-  state.zones.clear(); state.jg.clear(); state.picks.clear(); state.palm=null;
   state.auto.A=null; state.auto.B=null;
-  document.querySelectorAll('.zone').forEach(e=>e.classList.remove('on'));
-  document.querySelectorAll('.jg').forEach(e=>e.classList.remove('on'));
-  document.querySelectorAll('.opt input').forEach(i=>{ i.checked=false; i.closest('.opt').classList.remove('on'); });
-  document.querySelectorAll('#palmPick input').forEach(i=>{ i.checked=false; });
-  document.querySelectorAll('#palmPick .wx-opt').forEach(l=>l.classList.remove('on'));
-  renderZones(); renderJG();
   clearPhoto('A'); clearPhoto('B');
-  document.getElementById('report').classList.remove('show');
-  document.getElementById('report').innerHTML = '';
-  ['step1','step2','step3','step4'].forEach(id=>document.getElementById(id).classList.remove('done'));
+  ['step1','step2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.remove('done'); });
+  const r=document.getElementById('report');
+  r.classList.remove('show'); r.innerHTML='';
   generate();
   window.scrollTo({top:0,behavior:'smooth'});
 }
+// 初始展示報告引導語（未拍照時）
 // 初始展示報告引導語（無輸入時）
 generate();
 </script>
